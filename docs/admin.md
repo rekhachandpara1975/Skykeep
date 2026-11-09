@@ -15,10 +15,14 @@ Changes reach open apps in seconds (Realtime on `app_mode`, `plans`, `plan_catal
 | Payments › Manual mode | Every payment shows "Payment received, being verified" until you approve. |
 | Payments › Mark paid / Approve | User's status flips to "Payment successful! Your plan is now active." on next refresh. |
 | Payments › Revoke | Plan ends now; Premium badge and 2 TB quota disappear. |
-| Approvals › Approve | Organic user gets full videos and ads-audience channels. |
+| Approvals › Approve | Organic user gets ads-audience channels and posts (and, in free mode, full premium videos). In paid mode a plan alone already unlocks premium videos. |
 | Channels › Approve (+ audience) | Creator's channel goes live for that audience; creator can upload. |
 | Channels › Hide / Requests › Hide content | Disappears from the app for everyone except admins. |
 | Users › Grant | Adds a plan for N days (stacks on the current end date). |
 | Requests › Delete account | Account and files removed; payment records kept (no name) for tax. |
 | Meta Pixel › Send events | Queued Lead / CompleteRegistration / Purchase events go to Meta every 5 min. |
 | Meta Pixel › Upload ads APK | `/d` download button serves the new APK. |
+| Google Play › confirm approval + Turn on purchases | Play builds show Play plans; Google's sheet offers "Pay with Google Play" or "Pay with UPI". Off → Play users see the free tier only. |
+| Google Play › map product → plan | That plan appears in the Play build (only while billing is on and plans are visible to the user). |
+
+See `rules.md` for exactly who sees what, `payments.md` for the daily bank check and `play-billing.md` for Google Play.

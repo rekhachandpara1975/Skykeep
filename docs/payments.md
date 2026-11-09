@@ -27,7 +27,7 @@ UPI result strings can be faked on a rooted phone. That is why the bank check be
 Saving a new UPI ID applies to new orders only. Unpaid pending orders for the old ID are cancelled the next time that user taps Buy. **Clear UPI ID** turns payments off everywhere instantly.
 
 ## Organic buyers
-Users who did not come from an ad get the plan (2 TB storage) at once, but full videos and ads-audience channels wait for your approval in Admin › Approvals.
+Users who did not come from an ad get the plan at once: 2 TB storage plus full premium videos in the content they can already see. Only **ads-audience** channels and posts wait for your approval in Admin › Approvals. See `rules.md`.
 
 ## Refunds
 Refund by UPI from your bank app to the payer, then **Revoke** the order.
