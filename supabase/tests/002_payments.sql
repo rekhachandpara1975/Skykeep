@@ -150,13 +150,14 @@ insert into tests.o select 'i', (j->>'order_id')::uuid, j->>'reference' from (se
 select is(report_result((select id from tests.o where k='i'),
   'txnId=ORG1234567&Status=SUCCESS&txnRef=' || (select ref from tests.o where k='i')) ->> 'status', 'paid', 'organic buyer paid');
 select is(my_status() ->> 'access_status', 'pending', 'organic buyer -> access pending');
-select is((my_status() ->> 'is_premium')::boolean, false, 'organic buyer not premium until approved');
+select is((my_status() ->> 'is_premium')::boolean, true, 'paid mode: organic buyer gets premium items with the plan');
+select is((my_status() ->> 'has_ads_access')::boolean, false, 'organic buyer has no ads content until approved');
 reset role;
 select tests.as_user('00000000-0000-0000-0000-0000000000b1');
 select admin_set_access('00000000-0000-0000-0000-0000000000b3', 'approved');
 reset role;
 select tests.as_user('00000000-0000-0000-0000-0000000000b3');
-select is((my_status() ->> 'is_premium')::boolean, true, 'approved organic buyer is premium');
+select is((my_status() ->> 'has_ads_access')::boolean, true, 'approved organic buyer gets ads content');
 reset role;
 
 -- ===== free plans per group =====
