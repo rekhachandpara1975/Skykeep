@@ -52,7 +52,7 @@ select is((select is_guest from profiles where id = '00000000-0000-0000-0000-000
 select is(source_of('00000000-0000-0000-0000-0000000000a4'), 'ads', 'guest conversion keeps source');
 
 -- ===== channels / audience =====
-select set_config('request.jwt.claim.sub', '', true); -- act as service role for fixtures
+select set_config('request.jwt.claim.sub', '', true), set_config('request.jwt.claims', '', true); -- act as service role for fixtures
 insert into channels (id, name, audience, review_status, status) values
   ('00000000-0000-0000-0000-00000000c001', 'All channel', 'all', 'approved', 'published'),
   ('00000000-0000-0000-0000-00000000c002', 'Organic channel', 'organic', 'approved', 'published'),

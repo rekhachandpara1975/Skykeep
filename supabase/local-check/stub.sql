@@ -6,7 +6,7 @@ alter default privileges in schema extensions grant execute on functions to anon
 
 create table auth.users (id uuid primary key, email text, is_anonymous boolean default false);
 create function auth.uid() returns uuid language sql stable as
-  $$ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
+  $$ select coalesce(nullif(current_setting('request.jwt.claim.sub', true), ''), (nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub'))::uuid $$;
 create function auth.jwt() returns jsonb language sql stable as $$ select '{}'::jsonb $$;
 grant execute on function auth.uid(), auth.jwt() to anon, authenticated, service_role;
 
