@@ -1,0 +1,32 @@
+@import "tailwindcss";
+
+@theme {
+  --color-accent: #4f8cff;
+  --color-accent-2: #8a5cff;
+  --color-ink: #0f172a;
+  --color-muted: #64748b;
+  --color-line: #e2e8f0;
+  --color-bg: #f8fafc;
+  --color-night: #0b1020;
+  --color-night-2: #121a33;
+  --font-sans: "Poppins", ui-sans-serif, system-ui, sans-serif;
+}
+
+body { background: var(--color-bg); color: var(--color-ink); }
+
+.card { @apply rounded-xl border border-line bg-white p-4 shadow-sm; }
+@utility btn { @apply inline-flex items-center justify-center gap-1 rounded-lg px-3 py-1.5 text-sm font-medium transition disabled:opacity-50; }
+.btn-primary { @apply btn bg-accent text-white hover:brightness-110; }
+.btn-ghost { @apply btn border border-line bg-white hover:bg-slate-50; }
+.btn-danger { @apply btn bg-red-600 text-white hover:bg-red-700; }
+.btn-success { @apply btn bg-emerald-600 text-white hover:bg-emerald-700; }
+.input { @apply w-full rounded-lg border border-line bg-white px-3 py-1.5 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20; }
+.label { @apply mb-1 block text-xs font-medium text-muted; }
+.table { @apply w-full text-left text-sm; }
+.table th { @apply border-b border-line px-2 py-2 text-xs font-semibold uppercase tracking-wide text-muted; }
+.table td { @apply border-b border-line px-2 py-2 align-top; }
+.badge { @apply inline-block rounded-full px-2 py-0.5 text-xs font-medium; }
+.h1 { @apply mb-4 text-xl font-semibold; }
+.h2 { @apply mb-3 text-base font-semibold; }
+
+.gradient { background-image: linear-gradient(135deg, var(--color-accent), var(--color-accent-2)); }
