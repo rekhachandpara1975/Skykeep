@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SkyKeep cloud mark (108dp adaptive canvas, art inside the 66dp safe zone) -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
+    <path android:fillColor="#FFFFFFFF" android:pathData="M33,58 a11,11 0 1,0 22,0 a11,11 0 1,0 -22,0 M42,49 a15,15 0 1,0 30,0 a15,15 0 1,0 -30,0 M60,59 a10,10 0 1,0 20,0 a10,10 0 1,0 -20,0 M38,57 h33 v12 h-33 z M33,63 a6,6 0 1,0 12,0 a6,6 0 1,0 -12,0" />
+    <path android:fillColor="#FF4F8CFF" android:pathData="M54,52 l-6,7 h4 v7 h4 v-7 h4 z" />
+</vector>
