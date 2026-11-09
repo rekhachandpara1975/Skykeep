@@ -272,6 +272,15 @@ class Api {
   Future<String> playChallenge() async => (await db.rpc('play_integrity_challenge')).toString();
   Future<bool> playVerify(String token, String nonce) async =>
       jsonDecode(jsonEncode((await db.functions.invoke('play-verify', body: {'token': token, 'nonce': nonce})).data))['verified'] == true;
+  Future<List<Json>> playCatalog() async => List<Json>.from(((await db.rpc('play_catalog')) as List? ?? const []).map((e) => Json.from(e as Map)));
+  Future<String> playAccountId() async => (await db.rpc('play_account_id')).toString();
+  Future<Json> createPlayChoiceOrder(String planId, String externalToken, String state) async => Json.from(await db.rpc(
+      'create_play_choice_order', params: {'p_plan_id': planId, 'p_external_token': externalToken, 'p_state': state}) as Map);
+  /// Server verifies each token with Google, acknowledges it and records the entitlement.
+  Future<void> playPurchase(List<Map<String, String>> purchases) async {
+    if (purchases.isEmpty) return;
+    await db.functions.invoke('play-purchase', body: {'purchases': purchases});
+  }
 }
 
 extension Uint8ListX on List<int> {

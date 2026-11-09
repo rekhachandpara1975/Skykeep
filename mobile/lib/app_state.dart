@@ -4,20 +4,25 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show RealtimeChannel;
 
+import 'config.dart';
 import 'services/api.dart';
+import 'services/play_billing.dart';
 import 'services/status.dart';
 import 'services/upi.dart';
 
 /// Holds server status, the live plan catalog and the pending-payment queue.
 class AppController extends ChangeNotifier with WidgetsBindingObserver {
-  AppController({required this.api, required this.prefs, this.upi = const UpiLauncher(), this.realtime = true})
-      : queue = PendingPaymentsQueue(prefs);
+  AppController({required this.api, required this.prefs, this.upi = const UpiLauncher(), this.realtime = true, PlayBilling? play})
+      : queue = PendingPaymentsQueue(prefs),
+        play = play ?? PlayBilling();
 
   final Api api;
   final SharedPreferences prefs;
   final UpiLauncher upi;
   final PendingPaymentsQueue queue;
   final bool realtime;
+  final PlayBilling play;
+  bool _playSyncing = false;
 
   AppStatus status = const AppStatus();
   List<Json> plans = const [];
@@ -29,6 +34,7 @@ class AppController extends ChangeNotifier with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     await refresh();
     unawaited(flushPayments());
+    unawaited(syncPlay());
     if (realtime) _channel = api.subscribeMode(() => refresh());
     _poll = Timer.periodic(const Duration(seconds: 60), (_) => refresh());
   }
@@ -45,7 +51,7 @@ class AppController extends ChangeNotifier with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       flushPayments();
-      refresh();
+      refresh().then((_) => syncPlay());
     }
   }
 
@@ -69,6 +75,34 @@ class AppController extends ChangeNotifier with WidgetsBindingObserver {
       plans = await api.activePlans();
     } catch (_) {}
     return hit();
+  }
+
+  /// Play build only: Integrity check for the free tier, then (when the server turned Play billing on)
+  /// connect Billing and send owned subscriptions to the server so purchases are recovered on resume.
+  Future<void> syncPlay() async {
+    if (!Config.playStore || status.isGuest || _playSyncing) return;
+    _playSyncing = true;
+    try {
+      if (!status.playVerified) {
+        final nonce = await api.playChallenge();
+        if (await api.playVerify(await play.integrityToken(nonce), nonce)) await refresh();
+      }
+      if (status.playBillingEnabled) {
+        play.onPurchases ??= (result, purchases) => recordPlayPurchases(purchases);
+        if (await play.connect() == 'ready') await recordPlayPurchases(await play.queryPurchases());
+      }
+    } catch (e) {
+      debugPrint('play sync failed: $e');
+    } finally {
+      _playSyncing = false;
+    }
+  }
+
+  Future<void> recordPlayPurchases(List<PlayPurchase> purchases) async {
+    final bought = purchases.where((p) => p.state == 'purchased' && p.purchaseToken.isNotEmpty).toList();
+    if (bought.isEmpty) return;
+    await api.playPurchase([for (final p in bought) p.toJson()]);
+    await refresh();
   }
 
   Future<Map<String, String>> flushPayments() async {

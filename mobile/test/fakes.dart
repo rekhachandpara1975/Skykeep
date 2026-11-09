@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:skykeep/app_state.dart';
 import 'package:skykeep/main.dart';
 import 'package:skykeep/services/api.dart';
+import 'package:skykeep/services/play_billing.dart';
 import 'package:skykeep/services/upi.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show User;
 
@@ -91,6 +92,43 @@ class FakeApi extends Api {
   Future<List<Json>> cloudFolders(String? parentId) async => const [];
   @override
   Future<List<Json>> cloudFiles(String? folderId) async => const [];
+
+  // ---------- play ----------
+  List<Json> playCatalogList = const [];
+  final playChoiceOrders = <List<String>>[];
+  final playRecorded = <List<Map<String, String>>>[];
+  bool playVerified = false;
+  @override
+  Future<List<Json>> playCatalog() async => playCatalogList;
+  @override
+  Future<String> playAccountId() async => 'a' * 64;
+  @override
+  Future<String> playChallenge() async => 'nonce-1';
+  @override
+  Future<bool> playVerify(String token, String nonce) async => playVerified = true;
+  @override
+  Future<Json> createPlayChoiceOrder(String planId, String externalToken, String state) async {
+    playChoiceOrders.add([planId, externalToken, state]);
+    return {'order_id': 'o-play', 'reference': 'SK20261109PLAY0001', 'amount_inr': 99, 'upi_id': 'shop@okaxis', 'payee_name': 'SkyKeep Shop'};
+  }
+  @override
+  Future<void> playPurchase(List<Map<String, String>> purchases) async => playRecorded.add(purchases);
+}
+
+class FakePlay extends PlayBilling {
+  final bought = <List<String?>>[];
+  List<PlayPurchase> owned = const [];
+  @override
+  Future<String> integrityToken(String nonce) async => 'integrity-token';
+  @override
+  Future<String> connect() async => 'ready';
+  @override
+  Future<String> buy({required String productId, String? basePlanId, required String accountId}) async {
+    bought.add([productId, basePlanId, accountId]);
+    return 'ok';
+  }
+  @override
+  Future<List<PlayPurchase>> queryPurchases() async => owned;
 }
 
 class FakeUpi extends UpiLauncher {
@@ -104,22 +142,22 @@ class FakeUpi extends UpiLauncher {
   }
 }
 
-Future<AppController> makeController(FakeApi api, {UpiLauncher? upi}) async {
+Future<AppController> makeController(FakeApi api, {UpiLauncher? upi, PlayBilling? play}) async {
   SharedPreferences.setMockInitialValues({});
   final prefs = await SharedPreferences.getInstance();
-  final c = AppController(api: api, prefs: prefs, upi: upi ?? FakeUpi(const UpiLaunch()), realtime: false);
+  final c = AppController(api: api, prefs: prefs, upi: upi ?? FakeUpi(const UpiLaunch()), realtime: false, play: play ?? FakePlay());
   await c.refresh();
   return c;
 }
 
 Future<AppController> pumpApp(WidgetTester t, FakeApi api, Widget home,
-    {UpiLauncher? upi, double width = 400, double height = 860, double textScale = 1}) async {
+    {UpiLauncher? upi, PlayBilling? play, double width = 400, double height = 860, double textScale = 1}) async {
   t.view.physicalSize = Size(width * 3, height * 3);
   t.view.devicePixelRatio = 3;
   addTearDown(t.view.reset);
   t.platformDispatcher.textScaleFactorTestValue = textScale;
   addTearDown(t.platformDispatcher.clearTextScaleFactorTestValue);
-  final c = await makeController(api, upi: upi);
+  final c = await makeController(api, upi: upi, play: play);
   await t.pumpWidget(SkyKeepApp(controller: c, home: home, googleFonts: false));
   await t.pumpAndSettle();
   return c;

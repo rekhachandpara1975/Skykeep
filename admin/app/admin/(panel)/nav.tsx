@@ -11,6 +11,7 @@ const ITEMS = [
   { href: '/admin/users', label: 'Users' },
   { href: '/admin/requests', label: 'Requests' },
   { href: '/admin/plans', label: 'Plans' },
+  { href: '/admin/play', label: 'Google Play' },
   { href: '/admin/meta', label: 'Meta Pixel' },
   { href: '/admin/admins', label: 'Admins' },
 ];

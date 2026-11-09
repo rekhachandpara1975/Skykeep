@@ -35,18 +35,20 @@ Future<void> startPurchase(BuildContext context, BuyMessage msg) async {
 }
 
 
-Future<void> upiCheckout(BuildContext context, {required Json plan, required num shownPriceInr}) async {
+/// [createOrder] defaults to the normal UPI order; the Play build passes the User Choice Billing order
+/// (same server rules + Google's external transaction token).
+Future<void> upiCheckout(BuildContext context, {required Json plan, required num? shownPriceInr, Future<Json> Function()? createOrder}) async {
   final app = AppScope.read(context);
   Json order;
   try {
-    order = await app.api.createOrder(plan['id'] as String);
+    order = await (createOrder ?? () => app.api.createOrder(plan['id'] as String))();
   } catch (e) {
     if (context.mounted) toast(context, friendlyError(e));
     return;
   }
   if (!context.mounted) return;
   final amount = order['amount_inr'] as num;
-  if (amount != shownPriceInr && !await confirmPriceChange(context, amount)) return;
+  if (shownPriceInr != null && amount != shownPriceInr && !await confirmPriceChange(context, amount)) return;
   if (!context.mounted) return;
 
   final uri = buildUpiUri(upiId: order['upi_id'] as String, payee: order['payee_name'] as String,
