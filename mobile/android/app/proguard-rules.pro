@@ -1,0 +1,4 @@
+-keep class com.skykeep.app.** { *; }
+-keep class com.android.billingclient.** { *; }
+-keep class com.google.android.play.core.integrity.** { *; }
+-dontwarn com.google.android.play.core.**

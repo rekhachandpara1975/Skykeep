@@ -1,0 +1,79 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <!-- No advertising id, no ad SDKs. -->
+    <uses-permission android:name="com.google.android.gms.permission.AD_ID" tools:node="remove" />
+
+    <application
+        android:label="SkyKeep"
+        android:name="${applicationName}"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher"
+        android:allowBackup="false"
+        android:usesCleartextTraffic="false">
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:launchMode="singleTop"
+            android:taskAffinity=""
+            android:theme="@style/LaunchTheme"
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
+            android:hardwareAccelerated="true"
+            android:windowSoftInputMode="adjustResize">
+            <meta-data
+              android:name="io.flutter.embedding.android.NormalTheme"
+              android:resource="@style/NormalTheme" />
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+            <!-- Email confirmation / password reset links: <package>://login-callback -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="${authScheme}" android:host="login-callback" />
+            </intent-filter>
+        </activity>
+        <meta-data android:name="flutterEmbedding" android:value="2" />
+    </application>
+
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.PROCESS_TEXT"/>
+            <data android:mimeType="text/plain"/>
+        </intent>
+        <!-- UPI intent apps -->
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="upi" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="https" />
+        </intent>
+        <package android:name="com.google.android.apps.nbu.paisa.user" />  <!-- Google Pay -->
+        <package android:name="com.phonepe.app" />
+        <package android:name="net.one97.paytm" />
+        <package android:name="in.org.npci.upiapp" />                     <!-- BHIM -->
+        <package android:name="in.amazon.mShop.android.shopping" />       <!-- Amazon Pay -->
+        <package android:name="com.dreamplug.androidapp" />               <!-- CRED -->
+        <package android:name="com.mobikwik_new" />
+        <package android:name="com.freecharge.android" />
+        <package android:name="com.myairtelapp" />
+        <package android:name="com.csam.icici.bank.imobile" />            <!-- iMobile -->
+        <package android:name="com.sbi.upi" />                            <!-- BHIM SBI Pay -->
+        <package android:name="com.sbi.lotusintouch" />                   <!-- YONO SBI -->
+        <package android:name="com.upi.axispay" />                        <!-- Axis Pay -->
+        <package android:name="com.axis.mobile" />
+        <package android:name="com.msf.kbank.mobile" />                   <!-- Kotak -->
+        <package android:name="com.snapwork.hdfc" />                      <!-- HDFC -->
+        <package android:name="com.bankofbaroda.upi" />
+        <package android:name="com.fss.unbipsp" />                        <!-- Union Bank -->
+        <package android:name="com.whatsapp" />                           <!-- WhatsApp Pay -->
+        <package android:name="money.super.payments" />                   <!-- super.money -->
+        <package android:name="com.naviapp" />                            <!-- Navi -->
+        <package android:name="com.google.android.apps.walletnfcrel" />   <!-- Google Wallet -->
+    </queries>
+</manifest>
