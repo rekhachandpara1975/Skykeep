@@ -56,6 +56,7 @@ class AppController extends ChangeNotifier with WidgetsBindingObserver {
 
   Future<void> refresh() async {
     try {
+      await api.ensureGuest(); // every user is at least a guest (organic or from ads)
       final r = await Future.wait([api.myStatus(), api.planOffers(), api.activePlans()]);
       status = AppStatus.fromServer(r[0] as Json, r[1] as Json);
       plans = r[2] as List<Json>;

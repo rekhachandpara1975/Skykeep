@@ -15,6 +15,6 @@ void main() {
 
   testWidgets('Settings shows the real version', (t) async {
     await pumpApp(t, FakeApi(), const SettingsScreen());
-    expect(find.text(appVersion), findsOneWidget);
+    expect(find.text('Version $appVersion'), findsOneWidget);
   });
 }

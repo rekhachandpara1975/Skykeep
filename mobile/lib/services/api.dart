@@ -41,6 +41,11 @@ class Api {
     await prefs.setBool('install_recorded', true);
   }
 
+  /// No session (first open was offline, or guest sign-in failed): try again as a guest.
+  Future<void> ensureGuest() async {
+    if (db.auth.currentSession == null) await db.auth.signInAnonymously();
+  }
+
   /// Guest → account: keeps the same user id (all guest data stays).
   Future<void> signUp(String email, String password) async {
     if (user != null && user!.isAnonymous) {
@@ -74,7 +79,7 @@ class Api {
   Future<Json> myStatus() async => Json.from(await db.rpc('my_status') as Map);
   Future<Json> planOffers() async => Json.from(await db.rpc('plan_offers') as Map);
   Future<List<Json>> activePlans() async =>
-      List<Json>.from(await db.from('plans').select('id,name,price_inr,duration_days').eq('active', true).order('position'));
+      List<Json>.from(await db.from('plans').select('id,name,price_inr,duration_days,duration_hours,perks,badge').eq('active', true).order('position'));
   Future<String> requestFullAccess() async => (await db.rpc('request_full_access')).toString();
 
   /// Realtime: app_mode / plan_catalog changes → callback.

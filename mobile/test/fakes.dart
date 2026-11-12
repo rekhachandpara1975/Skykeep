@@ -54,6 +54,8 @@ class FakeApi extends Api {
   @override
   User? get user => null;
   @override
+  Future<void> ensureGuest() async {}
+  @override
   Future<Json> myStatus() async => status;
   @override
   Future<Json> planOffers() async =>

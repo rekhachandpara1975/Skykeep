@@ -9,6 +9,7 @@ import '../theme.dart';
 import '../widgets/common.dart';
 import 'explore.dart';
 import 'login_sheet.dart';
+import 'profile.dart' show ProfileButton;
 import 'premium.dart';
 
 class ChannelsScreen extends StatefulWidget {
@@ -23,7 +24,7 @@ class _ChannelsScreenState extends State<ChannelsScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('Channels')),
+        appBar: AppBar(title: const Text('Channels'), actions: const [ProfileButton()]),
         body: Column(children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),

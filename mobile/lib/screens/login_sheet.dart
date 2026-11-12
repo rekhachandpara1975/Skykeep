@@ -6,7 +6,7 @@ import '../theme.dart';
 import '../widgets/common.dart';
 
 /// Returns true when the user is a member (logged in) after the sheet closes.
-Future<bool> requireMember(BuildContext context, {String reason = 'Log in to continue'}) async {
+Future<bool> requireMember(BuildContext context, {String reason = 'Log in to continue', bool signUp = false}) async {
   final app = AppScope.read(context);
   if (!app.api.isGuest) return true;
   await showModalBottomSheet<void>(
@@ -14,7 +14,7 @@ Future<bool> requireMember(BuildContext context, {String reason = 'Log in to con
     isScrollControlled: true,
     backgroundColor: C.surface,
     shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-    builder: (_) => LoginSheet(reason: reason),
+    builder: (_) => LoginSheet(reason: reason, signUp: signUp),
   );
   await app.refresh();
   return !app.api.isGuest;
@@ -49,8 +49,9 @@ Future<bool> requireConsent(BuildContext context) async {
 }
 
 class LoginSheet extends StatefulWidget {
-  const LoginSheet({super.key, required this.reason});
+  const LoginSheet({super.key, required this.reason, this.signUp = false});
   final String reason;
+  final bool signUp;
   @override
   State<LoginSheet> createState() => _LoginSheetState();
 }
@@ -58,17 +59,19 @@ class LoginSheet extends StatefulWidget {
 class _LoginSheetState extends State<LoginSheet> {
   final _email = TextEditingController();
   final _password = TextEditingController();
-  bool _signUp = true, _busy = false;
+  late bool _signUp = widget.signUp;
+  bool _busy = false;
   String? _error, _info;
 
   Future<void> _run(Future<void> Function() f, {String? info, bool close = false}) async {
     setState(() { _busy = true; _error = null; _info = null; });
     try {
       await f();
-      if (close && mounted) return Navigator.pop(context);
+      if (!mounted) return;
+      if (close) return Navigator.pop(context);
       setState(() => _info = info);
     } catch (e) {
-      setState(() => _error = friendlyError(e));
+      if (mounted) setState(() => _error = friendlyError(e));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -76,9 +79,14 @@ class _LoginSheetState extends State<LoginSheet> {
 
   bool _show = false;
 
+  void _close() {
+    if (mounted) Navigator.pop(context);
+  }
+
   @override
   Widget build(BuildContext context) {
-    final api = AppScope.read(context).api;
+    final app = AppScope.read(context);
+    final api = app.api;
     final valid = _email.text.contains('@') && (_password.text.length >= 8);
     return Padding(
       padding: EdgeInsets.fromLTRB(20, 12, 20, 20 + MediaQuery.of(context).viewInsets.bottom),
@@ -88,12 +96,12 @@ class _LoginSheetState extends State<LoginSheet> {
           const SizedBox(height: 16),
           const Center(child: CloudMark(size: 56)),
           const SizedBox(height: 8),
-          Text(_signUp ? 'Create your account' : 'Welcome back', textAlign: TextAlign.center,
+          Text(_signUp ? 'Create account' : 'Log in', textAlign: TextAlign.center,
               style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
           const SizedBox(height: 4),
           Text(widget.reason, textAlign: TextAlign.center, style: const TextStyle(color: C.muted)),
           const SizedBox(height: 16),
-          PillTabs(labels: const ['Log in', 'Sign up'], index: _signUp ? 1 : 0,
+          PillTabs(labels: const ['Log in', 'Create account'], index: _signUp ? 1 : 0,
               onChanged: (i) => setState(() { _signUp = i == 1; _error = null; _info = null; })),
           const SizedBox(height: 16),
           TextField(controller: _email, keyboardType: TextInputType.emailAddress, autofillHints: const [AutofillHints.email],
@@ -113,20 +121,22 @@ class _LoginSheetState extends State<LoginSheet> {
               child: const Text('Forgot password?'),
             )),
           if (_signUp) const Padding(padding: EdgeInsets.only(top: 8),
-              child: Text('Everything you did as a guest stays with your new account.', style: TextStyle(color: C.muted, fontSize: 13))),
+              child: Text('Your plan, files and channels from this phone stay with your account.', style: TextStyle(color: C.muted, fontSize: 13))),
           if (_error != null) Padding(padding: const EdgeInsets.only(top: 8), child: Text(_error!, style: const TextStyle(color: C.dangerText))),
           if (_info != null) Padding(padding: const EdgeInsets.only(top: 8), child: Text(_info!, style: const TextStyle(color: C.successText))),
           const SizedBox(height: 16),
           GradientButton(
             label: _busy ? 'Please wait…' : (_signUp ? 'Create account' : 'Log in'),
             onPressed: _busy || !valid ? null : () => _signUp
-                ? _run(() => api.signUp(_email.text.trim(), _password.text), info: 'Check your email to confirm, then come back.')
+                ? _run(() async {
+                    await api.signUp(_email.text.trim(), _password.text);
+                    await app.refresh();
+                    if (!api.isGuest) _close(); // account ready at once
+                  }, info: 'Check your email to confirm, then come back.')
                 : _run(() => api.signIn(_email.text.trim(), _password.text), close: true),
           ),
-          const Padding(padding: EdgeInsets.symmetric(vertical: 10), child: Row(children: [
-            Expanded(child: Divider()), Padding(padding: EdgeInsets.symmetric(horizontal: 12), child: Text('or', style: TextStyle(color: C.muted))), Expanded(child: Divider()),
-          ])),
-          OutlinedButton(onPressed: () => Navigator.pop(context), child: const Text('Continue as guest')),
+          const SizedBox(height: 4),
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Not now')),
         ]),
       ),
     );

@@ -45,8 +45,9 @@ reset role;
 select throws_ok($$ update payment_settings set upi_id = 'not-a-upi' $$, '23514', null, 'UPI format checked');
 update payment_settings set upi_id = 'shop@okaxis', payee_name = 'SkyKeep Shop';
 select tests.as_user('00000000-0000-0000-0000-0000000000b4');
-select throws_ok($$ select create_order('00000000-0000-0000-0000-0000000000f1') $$, '42501', null, 'guest must log in to buy');
+select lives_ok($$ select create_order('00000000-0000-0000-0000-0000000000f1') $$, 'guests may buy (migration 015)');
 reset role;
+delete from payment_orders where user_id = '00000000-0000-0000-0000-0000000000b4';  -- keep later counts unchanged
 
 -- ===== snapshot + happy path =====
 select tests.as_user('00000000-0000-0000-0000-0000000000b2');
