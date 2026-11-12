@@ -2,6 +2,8 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set search_path = public, extensions;
 select no_plan();
+-- these tests cover the manual (owner verifies) mode; instant mode is in 008
+update public.payment_settings set activation_mode = 'manual' where true;
 
 create schema tests;
 create function tests.as_user(uid uuid) returns void language plpgsql as $$
@@ -125,7 +127,7 @@ select lives_ok($$ select admin_confirm_bank((select id from tests.o where k='d'
 select lives_ok($$ select admin_revoke_order((select id from tests.o where k='d')) $$, 'revoke');
 select is((select status from subscriptions where order_id = (select id from tests.o where k='d')), 'revoked', 'revoke ends subscription');
 reset role;
-select throws_ok($$ update payment_settings set activation_mode = 'instant' $$, '23514', null, 'instant activation from the phone is not allowed');
+select throws_ok($$ update payment_settings set activation_mode = 'auto' where true $$, '23514', null, 'only instant or manual');
 
 -- UPI change cancels old pending; clear turns payments off
 select tests.as_user('00000000-0000-0000-0000-0000000000b3');

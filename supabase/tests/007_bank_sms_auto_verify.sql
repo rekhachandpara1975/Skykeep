@@ -2,6 +2,8 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set search_path = public, extensions;
 select no_plan();
+-- these tests cover the manual (owner verifies) mode; instant mode is in 008
+update public.payment_settings set activation_mode = 'manual' where true;
 
 create schema tests;
 create function tests.as_user(uid uuid) returns void language plpgsql as $$

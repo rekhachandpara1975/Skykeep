@@ -47,7 +47,18 @@ Status names: **pending** = waiting for payment, **review** (or `submitted`) = v
 
 Google Play: the Play Store build never shows this checkout and has no Google Play Billing; it is free tier only (`play-store.md`).
 
-## Automatic verification (bank SMS)
+## Instant activation from the UPI app (default)
+When the buyer's UPI app returns **SUCCESS** for the order (the intent callback), the server activates the plan at once,
+but only if all of these hold: the answer's `txnRef` is this order's reference, there is a transaction id / UTR that was
+never used before, the order is under 2 hours old, and the buyer has had fewer than 3 instant activations in 24 hours.
+Otherwise the order goes to **To verify**. FAILURE → failed; cancelled / no answer → still waiting ("I have paid").
+
+Risk you accept with this mode: a SUCCESS answer comes from the buyer's phone and can be faked by a determined user.
+That is why each instant activation shows under **Activated today — verify against bank**: tick **Bank verified** or
+**Revoke** (plan ends at once). Switch it off in Admin › Payments (untick "Activate instantly…") to go back to
+owner-verified only. A bank SMS (if you later set up the forwarder) confirms these orders automatically.
+
+## Automatic verification (bank SMS, optional)
 Plans activate **automatically within seconds** when your bank's own credit SMS confirms the payment. The phone's
 "SUCCESS" is never trusted on its own.
 
