@@ -17,13 +17,28 @@ env:
 jobs:
   test:
     runs-on: ubuntu-latest
+    permissions: { contents: write }
     defaults: { run: { working-directory: mobile } }
     steps:
       - uses: actions/checkout@v4
+        with: { ref: '${{ github.head_ref || github.ref }}' }
       - uses: subosito/flutter-action@v2
         with: { flutter-version: '${{ env.FLUTTER_VERSION }}', channel: stable, cache: true }
       - run: flutter pub get --enforce-lockfile
       - run: flutter analyze --fatal-infos
+      # Screenshots: on pull requests from this repo, CI redraws the golden images and commits any change to the PR,
+      # so the visual difference is reviewed in the PR's Files tab. On main they are compared as usual.
+      - name: Update golden screenshots (pull requests)
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        run: |
+          flutter test --update-goldens --tags golden
+          if [ -n "$(git status --porcelain test/goldens)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add test/goldens
+            git commit -m "Update golden screenshots"
+            git push
+          fi
       - run: flutter test
       - name: Play-build test (PLAY_STORE=true)
         run: flutter test --dart-define=PLAY_STORE=true test/play_build_test.dart
