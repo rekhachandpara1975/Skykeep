@@ -101,7 +101,7 @@ class Api {
   Future<Json> submitPaymentProof(String reference, String utr, {String? screenshotKey}) async => Json.from(await db.rpc(
       'submit_payment_proof', params: {'p_reference': reference, 'p_utr': utr, 'p_screenshot_key': screenshotKey}) as Map);
 
-  /// Private bucket, path <user id>/<reference>/<file>; only the buyer and the owner can read it.
+  /// Private bucket, path `user-id/reference/file`; only the buyer and the owner can read it.
   Future<String> uploadPaymentProof(String reference, String fileName, List<int> bytes, String mime) async {
     final key = '${user!.id}/$reference/${DateTime.now().millisecondsSinceEpoch}-${fileName.replaceAll(RegExp(r'[^A-Za-z0-9._-]'), '_')}';
     await db.storage.from('payment-proofs').uploadBinary(key, Uint8ListX.from(bytes), fileOptions: FileOptions(contentType: mime));
