@@ -20,7 +20,7 @@ class ProfileScreen extends StatelessWidget {
     final app = AppScope.of(context);
     final s = app.status;
     final guest = app.api.isGuest;
-    final showPlansFirst = !Config.playStore && !s.freeMode && s.plansVisible && !s.hasPlan;
+    final showPlansFirst = Config.sellsPlans && !s.freeMode && s.plansVisible && !s.hasPlan;
     return Scaffold(
       appBar: AppBar(title: const Text('Profile')),
       body: RefreshIndicator(
@@ -29,7 +29,7 @@ class ProfileScreen extends StatelessWidget {
           if (showPlansFirst) ...[const PremiumTile(), const SizedBox(height: 12)],
           AccountCard(status: s, isGuest: guest),
           const SizedBox(height: 12),
-          if (s.freeMode || Config.playStore) ...[
+          if (s.freeMode || !Config.sellsPlans) ...[
             SizedBox(height: 260, child: PremiumScreen(embedded: true)),
             const SizedBox(height: 12),
           ],
@@ -42,7 +42,7 @@ class ProfileScreen extends StatelessWidget {
                 }),
             ListTile(leading: const Icon(Icons.upload), title: const Text('Upload content'), trailing: const Icon(Icons.chevron_right),
                 onTap: () => openChannelForm(context)),
-            if (!guest && (s.hasPlan || (s.plansVisible && !Config.playStore)))
+            if (!guest && (s.hasPlan || (s.plansVisible && Config.sellsPlans)))
               ListTile(leading: const Icon(Icons.receipt_long), title: const Text('Payment history'), trailing: const Icon(Icons.chevron_right),
                   onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PaymentHistoryScreen()))),
             ListTile(leading: const Icon(Icons.settings), title: const Text('Settings'), trailing: const Icon(Icons.chevron_right),

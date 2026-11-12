@@ -41,7 +41,9 @@ jobs:
           fi
       - run: flutter test
       - name: Play-build test (PLAY_STORE=true)
-        run: flutter test --dart-define=PLAY_STORE=true test/play_build_test.dart
+        run: |
+          flutter test --dart-define=PLAY_STORE=true test/play_build_test.dart
+          flutter test --dart-define=PLAY_STORE=true --dart-define=PLAY_SELLS_UPI=true test/play_upi_build_test.dart
       - if: failure()
         uses: actions/upload-artifact@v4
         with: { name: golden-failures, path: mobile/test/failures, if-no-files-found: ignore }
@@ -97,7 +99,7 @@ jobs:
           flutter build apk --release --flavor direct $DEFINES \
             "--dart-define=APK_REFERRER=utm_source=meta&utm_medium=paid_social&utm_campaign=apk_download"
           cp build/app/outputs/flutter-apk/app-direct-release.apk out/SkyKeep-ads.apk
-          flutter build appbundle --release --flavor play $DEFINES --dart-define=PLAY_STORE=true --dart-define=ANDROID_APP_ID=com.skykeep.play
+          flutter build appbundle --release --flavor play $DEFINES --dart-define=PLAY_STORE=true --dart-define=PLAY_SELLS_UPI=true --dart-define=ANDROID_APP_ID=com.skykeep.play
           cp build/app/outputs/bundle/playRelease/app-play-release.aab out/SkyKeep-play.aab
           check_manifest playRelease com.skykeep.play
       - name: Verify signatures + checksums

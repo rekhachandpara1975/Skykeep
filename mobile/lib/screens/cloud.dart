@@ -153,7 +153,7 @@ class _CloudScreenState extends State<CloudScreen> {
                 ),
                 if (s.quotaBytes > 0) Text('${formatBytes(s.usedBytes)} of ${formatBytes(s.quotaBytes)} used',
                     style: const TextStyle(color: C.muted, fontSize: 12)),
-                if (!app.api.isGuest && !s.hasPlan && s.plansVisible && !s.freeMode && !Config.playStore && s.quotaBytes > 0) ...[
+                if (!app.api.isGuest && !s.hasPlan && s.plansVisible && !s.freeMode && Config.sellsPlans && s.quotaBytes > 0) ...[
                   const SizedBox(height: 10),
                   FilledButton(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PremiumScreen())),
                       style: FilledButton.styleFrom(minimumSize: const Size(96, 40)), child: const Text('Upgrade')),

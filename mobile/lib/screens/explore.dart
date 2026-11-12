@@ -88,7 +88,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
     final app = AppScope.of(context);
     final s = app.status;
     final guest = app.api.isGuest;
-    final showCrown = s.plansVisible && !s.hasPlan && !s.freeMode && !Config.playStore;
+    final showCrown = s.plansVisible && !s.hasPlan && !s.freeMode && Config.sellsPlans;
     final name = (s.displayName ?? app.api.user?.email?.split('@').first ?? '').trim();
     final greeting = switch (DateTime.now().hour) { < 12 => 'Good morning', < 17 => 'Good afternoon', _ => 'Good evening' };
 
