@@ -12,7 +12,7 @@ void main() {
     final api = FakeApi(status: statusJson(plansVisible: true, paymentsAvailable: true));
     await pumpApp(t, api, const PremiumScreen());
     expect(find.text('Free account'), findsNothing);
-    expect(find.text('View plans'), findsOneWidget);
+    expect(find.text('Choose your plan'), findsOneWidget);
   }, skip: skip);
 
   test('still the Play package', () {
