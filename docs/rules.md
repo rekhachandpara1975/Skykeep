@@ -45,11 +45,11 @@ they have an active plan).
   An ads user gets full access straight away.
 - One subscription per order (paying twice for the same order never grants twice). Renewals extend from the
   current end date.
-- Every subscription records where it came from: `upi_app`, `admin`, `google_play`, `free_promo` or `provider_api`.
+- Every subscription records where it came from: `upi_app`, `admin`, `free_promo` or `provider_api`.
 
 ## Builds
 | Build | Package | How people pay |
 |---|---|---|
 | Website APK | `com.skykeep.app` | Your UPI (plans page inside the app) |
 | Ads APK | `com.skykeep.app` + ads referrer | Your UPI |
-| Google Play | `com.skykeep.play` | Never your UPI page. Billing **off**: free tier only. Billing **on** (after Google approval): Google Play Billing with User Choice Billing (see `play-billing.md`) |
+| Google Play | `com.skykeep.play` | **Never sells anything** (Google doesn't allow your own UPI checkout in Play apps). Free tier only: 15 GB after the Play Integrity check; Premium screens say "Premium members only". See `play-store.md`. |

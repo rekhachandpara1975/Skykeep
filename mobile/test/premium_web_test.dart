@@ -39,7 +39,8 @@ void main() {
     expect(premiumMode(const AppStatus(plansVisible: false), playStore: false), PremiumMode.hidden);
     // Play build never shows the web plans / UPI
     expect(premiumMode(paid, playStore: true), PremiumMode.freeAccount);
-    expect(premiumMode(const AppStatus(plansVisible: true, playBillingEnabled: true), playStore: true), PremiumMode.playBilling);
+    expect(premiumMode(const AppStatus(plansVisible: true, playBillingEnabled: true), playStore: true), PremiumMode.freeAccount,
+        reason: 'Play build never sells, even if the old flag were on');
   });
 
   test('rupees with Indian grouping', () {

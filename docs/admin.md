@@ -22,7 +22,5 @@ Changes reach open apps in seconds (Realtime on `app_mode`, `plans`, `plan_catal
 | Requests › Delete account | Account and files removed; payment records kept (no name) for tax. |
 | Meta Pixel › Send events | Queued Lead / CompleteRegistration / Purchase events go to Meta every 5 min. |
 | Meta Pixel › Upload ads APK | `/d` download button serves the new APK. |
-| Google Play › confirm approval + Turn on purchases | Play builds show Play plans; Google's sheet offers "Pay with Google Play" or "Pay with UPI". Off → Play users see the free tier only. |
-| Google Play › map product → plan | That plan appears in the Play build (only while billing is on and plans are visible to the user). |
 
-See `rules.md` for exactly who sees what, `payments.md` for the daily bank check and `play-billing.md` for Google Play.
+See `rules.md` for exactly who sees what, `payments.md` for the daily bank check and `play-store.md` for the Play Store build.

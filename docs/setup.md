@@ -14,12 +14,10 @@ Your project ref is `vzeehoissxdutmxdezjf` (Tokyo). Change these in the Supabase
      - `https://skykeep.vercel.app/**`
 3. **Integrations › Cron**: the `cancel-stale-orders` job is created by the migrations. Add two HTTP jobs (Integrations › Cron › New job › HTTP request):
    - `meta-send` every 5 min, POST `https://vzeehoissxdutmxdezjf.supabase.co/functions/v1/meta-send`, header `Authorization: Bearer <service role key>`
-   - `play-report` **every hour**, same pattern (it does nothing while Play billing is off; see `play-billing.md`).
 4. **Edge Functions › Secrets** (only when you need them):
    | Secret | Needed for |
    |---|---|
    | `UPI_WEBHOOK_SECRET` | only if a bank/provider will call `upi-webhook` |
-   | `GOOGLE_SERVICE_ACCOUNT_JSON` | Play build: `play-verify` (15 GB for Play users), `play-purchase`, `play-report` |
    | `PLAY_PACKAGE` = `com.skykeep.play` | same |
 
 ## 2. GitHub secrets (Settings › Secrets and variables › Actions)

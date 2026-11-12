@@ -7,9 +7,9 @@ Cloud storage + creator channels. Android app, admin panel and website on Supaba
 | `supabase/` | migrations (all rules enforced with RLS + security-definer functions), pgTAP tests, edge functions, seed |
 | `admin/` | Next.js admin panel (`/admin`) and public website (`/`, `/subscribe`, `/d`, policies) — deployed on Vercel |
 | `mobile/` | Flutter Android app (direct APK, ads APK, Play AAB) |
-| `docs/` | [setup](docs/setup.md) · [payments](docs/payments.md) · [rules](docs/rules.md) · [Play billing](docs/play-billing.md) · [admin](docs/admin.md) |
+| `docs/` | [setup](docs/setup.md) · [payments](docs/payments.md) · [rules](docs/rules.md) · [Play Store build](docs/play-store.md) · [admin](docs/admin.md) |
 
-Payments: only your own UPI intent flow. No gateway, no Play Billing (prepared, off).
+Payments: only your own UPI intent flow, in the website and ads APKs. No gateway, no Google Play Billing; the Play Store build never sells anything.
 
 ## Local checks
 ```bash

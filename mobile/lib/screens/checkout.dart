@@ -37,12 +37,12 @@ Future<void> startPurchase(BuildContext context, BuyMessage msg) async {
 
 /// UPI intent checkout. The phone's answer is only a hint: the server moves the order to verification
 /// and the owner approves it — premium is never activated from the app.
-/// [createOrder] defaults to the normal UPI order; the Play build passes the User Choice Billing order.
-Future<void> upiCheckout(BuildContext context, {required Json plan, required num? shownPriceInr, Future<Json> Function()? createOrder}) async {
+/// Website / ads APK only — the Play Store build never shows a checkout.
+Future<void> upiCheckout(BuildContext context, {required Json plan, required num? shownPriceInr}) async {
   final app = AppScope.read(context);
   Json order;
   try {
-    order = await (createOrder ?? () => app.api.createOrder(plan['id'] as String))();
+    order = await app.api.createOrder(plan['id'] as String);
   } catch (e) {
     if (context.mounted) toast(context, friendlyError(e));
     return;

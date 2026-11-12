@@ -6,22 +6,21 @@ import 'package:supabase_flutter/supabase_flutter.dart' show RealtimeChannel;
 
 import 'config.dart';
 import 'services/api.dart';
-import 'services/play_billing.dart';
+import 'services/play_integrity.dart';
 import 'services/status.dart';
 import 'services/upi.dart';
 
 /// Holds server status, the live plan catalog and the pending-payment queue.
 class AppController extends ChangeNotifier with WidgetsBindingObserver {
-  AppController({required this.api, required this.prefs, this.upi = const UpiLauncher(), this.realtime = true, PlayBilling? play})
-      : queue = PendingPaymentsQueue(prefs),
-        play = play ?? PlayBilling();
+  AppController({required this.api, required this.prefs, this.upi = const UpiLauncher(), this.realtime = true, this.play = const PlayIntegrity()})
+      : queue = PendingPaymentsQueue(prefs);
 
   final Api api;
   final SharedPreferences prefs;
   final UpiLauncher upi;
   final PendingPaymentsQueue queue;
   final bool realtime;
-  final PlayBilling play;
+  final PlayIntegrity play;
   bool _playSyncing = false;
 
   AppStatus status = const AppStatus();
@@ -77,32 +76,18 @@ class AppController extends ChangeNotifier with WidgetsBindingObserver {
     return hit();
   }
 
-  /// Play build only: Integrity check for the free tier, then (when the server turned Play billing on)
-  /// connect Billing and send owned subscriptions to the server so purchases are recovered on resume.
+  /// Play Store build only: Play Integrity check → free 15 GB tier (server decides in play-verify).
   Future<void> syncPlay() async {
-    if (!Config.playStore || status.isGuest || _playSyncing) return;
+    if (!Config.playStore || status.isGuest || status.playVerified || _playSyncing) return;
     _playSyncing = true;
     try {
-      if (!status.playVerified) {
-        final nonce = await api.playChallenge();
-        if (await api.playVerify(await play.integrityToken(nonce), nonce)) await refresh();
-      }
-      if (status.playBillingEnabled) {
-        play.onPurchases ??= (result, purchases) => recordPlayPurchases(purchases);
-        if (await play.connect() == 'ready') await recordPlayPurchases(await play.queryPurchases());
-      }
+      final nonce = await api.playChallenge();
+      if (await api.playVerify(await play.token(nonce), nonce)) await refresh();
     } catch (e) {
-      debugPrint('play sync failed: $e');
+      debugPrint('play integrity failed: $e');
     } finally {
       _playSyncing = false;
     }
-  }
-
-  Future<void> recordPlayPurchases(List<PlayPurchase> purchases) async {
-    final bought = purchases.where((p) => p.state == 'purchased' && p.purchaseToken.isNotEmpty).toList();
-    if (bought.isEmpty) return;
-    await api.playPurchase([for (final p in bought) p.toJson()]);
-    await refresh();
   }
 
   Future<Map<String, String>> flushPayments() async {

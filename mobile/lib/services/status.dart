@@ -63,10 +63,11 @@ class AppStatus {
 }
 
 /// Which Premium experience this build + status should show.
-enum PremiumMode { freeAccount, hidden, web, playBilling }
+enum PremiumMode { freeAccount, hidden, web }
 
 PremiumMode premiumMode(AppStatus s, {required bool playStore}) {
-  if (playStore) return s.playBillingEnabled ? PremiumMode.playBilling : PremiumMode.freeAccount;
+  // Play Store build: never any purchase (UPI checkout only in the website / ads APKs).
+  if (playStore) return PremiumMode.freeAccount;
   if (s.freeMode) return PremiumMode.freeAccount;
   if (!s.plansVisible) return PremiumMode.hidden;
   return PremiumMode.web;

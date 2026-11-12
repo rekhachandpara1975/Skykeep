@@ -71,9 +71,8 @@ dependencies {
     // QR fallback when no UPI app opens (same upi://pay URI)
     implementation("com.google.zxing:core:3.5.3")
     testImplementation("junit:junit:4.13.2")
-    // Play build only: Play Integrity (15 GB free cloud) and User Choice Billing (prepared, OFF).
+    // Play build only: Play Integrity (15 GB free cloud). No billing library — the Play build never sells.
     "playImplementation"("com.google.android.play:integrity:1.4.0")
-    "playImplementation"("com.android.billingclient:billing-ktx:7.1.1")
 }
 
 flutter {

@@ -45,8 +45,7 @@ after you see it in your bank.
 Status names: **pending** = waiting for payment, **review** (or `submitted`) = verifying, **paid**, **expired**,
 **failed**, **rejected**, **cancelled**, **revoked**.
 
-Google Play: Play builds never show this checkout. When Play billing is on, UPI is offered only through Google's
-"Pay with UPI" choice (`play-billing.md`).
+Google Play: the Play Store build never shows this checkout and has no Google Play Billing; it is free tier only (`play-store.md`).
 
 ## Daily bank check (5 minutes)
 1. Admin › Payments › filter **Activated today — verify against bank**.
