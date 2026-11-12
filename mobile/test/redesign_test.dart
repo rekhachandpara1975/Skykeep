@@ -45,12 +45,15 @@ void main() {
     expect(find.text('Recent files'), findsNothing);
   });
 
-  testWidgets('Feed: Following shows joined channels, guest gets a log-in prompt', (t) async {
+  testWidgets('Feed: Following shows joined channels', (t) async {
     await pumpApp(t, FakeApi(posts: _posts), const FeedScreen());
     await t.tap(find.text('Following'));
     await t.pumpAndSettle();
     expect(find.text('Nature Vibes'), findsOneWidget);
     expect(find.text('2 hours ago'), findsOneWidget);
+  });
+
+  testWidgets('Feed: guest gets a log-in prompt on Following', (t) async {
     await pumpApp(t, FakeApi(guest: true, status: statusJson(guest: true), posts: _posts), const FeedScreen());
     await t.tap(find.text('Following'));
     await t.pumpAndSettle();
