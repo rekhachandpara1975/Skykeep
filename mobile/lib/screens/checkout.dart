@@ -355,7 +355,7 @@ class _Steps extends StatelessWidget {
     return Semantics(
       label: 'Step ${step + 1} of 4: ${labels[step]}',
       excludeSemantics: true,
-      child: Row(children: [
+      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
         for (var i = 0; i < labels.length; i++) ...[
           Expanded(child: Column(children: [
             Container(height: 6, decoration: BoxDecoration(color: i <= step ? C.primary : C.border, borderRadius: BorderRadius.circular(6))),

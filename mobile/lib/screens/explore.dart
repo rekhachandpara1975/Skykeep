@@ -55,13 +55,14 @@ class _ExploreScreenState extends State<ExploreScreen> {
   }
 
   Future<void> _load({bool force = false}) async {
-    if (!force && (_loading || !_more)) return;
+    if (!mounted || (!force && (_loading || !_more))) return;
     setState(() => _loading = true);
     try {
       final xs = await AppScope.read(context).api.latestPosts(page: _page, category: _cat);
+      if (!mounted) return;
       setState(() { _posts.addAll(xs); _page++; _more = xs.length == Api.pageSize; });
     } catch (_) {
-      setState(() => _error = true);
+      if (mounted) setState(() => _error = true);
     } finally {
       if (mounted) setState(() => _loading = false);
     }

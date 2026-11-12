@@ -256,8 +256,8 @@ class _PremiumWebViewState extends State<PremiumWebView> {
       ..addJavaScriptChannel(Config.jsChannel, onMessageReceived: (m) => widget.onMessage(m.message))
       ..setNavigationDelegate(NavigationDelegate(
         onNavigationRequest: (r) => allowWebNavigation(r.url) ? NavigationDecision.navigate : NavigationDecision.prevent,
-        onProgress: (p) => setState(() => _progress = p),
-        onWebResourceError: (e) { if (e.isForMainFrame ?? true) setState(() => _error = true); },
+        onProgress: (p) { if (mounted) setState(() => _progress = p); },
+        onWebResourceError: (e) { if ((e.isForMainFrame ?? true) && mounted) setState(() => _error = true); },
       ))
       ..loadRequest(widget.url);
   }

@@ -36,14 +36,18 @@ class _CloudScreenState extends State<CloudScreen> {
   Future<void> _load() async {
     final api = AppScope.read(context).api;
     if (api.isGuest) return;
+    if (!mounted) return;
+    final folder = _folderId;
     setState(() { _loading = true; _error = false; });
+    List<List<Json>>? r;
     try {
-      final r = await Future.wait([api.cloudFolders(_folderId), api.cloudFiles(_folderId)]);
-      _folders = r[0]; _files = r[1];
-    } catch (_) {
-      _error = true;
-    }
-    if (mounted) setState(() => _loading = false);
+      r = await Future.wait([api.cloudFolders(folder), api.cloudFiles(folder)]);
+    } catch (_) {}
+    if (!mounted || folder != _folderId) return; // the user moved to another folder meanwhile
+    setState(() {
+      if (r == null) { _error = true; } else { _folders = r[0]; _files = r[1]; }
+      _loading = false;
+    });
   }
 
   Future<void> _upload(FileType type) async {
@@ -84,6 +88,7 @@ class _CloudScreenState extends State<CloudScreen> {
           final url = await api.fileUrl(f['id'] as String);
           if (url != null) await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
         case 'download':
+          if (!AppScope.read(context).status.isPremium) { toast(context, 'Downloads are for Premium members'); return; }
           final url = await api.fileUrl(f['id'] as String, download: true);
           if (url != null) await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
         case 'rename':
@@ -124,7 +129,11 @@ class _CloudScreenState extends State<CloudScreen> {
             IconButton(tooltip: 'New folder', icon: const Icon(Icons.create_new_folder), onPressed: () async {
               final n = await askText(context, 'New folder', '');
               if (n == null) return;
-              await app.api.createFolder(n, _folderId);
+              try {
+                await app.api.createFolder(n, _folderId);
+              } catch (e) {
+                if (context.mounted) toast(context, friendlyError(e));
+              }
               _load();
             }),
           if (_path.isEmpty) const ProfileButton(),
@@ -173,7 +182,10 @@ class _CloudScreenState extends State<CloudScreen> {
           for (final u in _uploads.entries)
             ListTile(leading: const Icon(Icons.upload_file), title: Text(u.key, maxLines: 1, overflow: TextOverflow.ellipsis),
                 subtitle: LinearProgressIndicator(value: u.value)),
-          if (_error) ErrorRetry(onRetry: _load),
+          if (_error) Padding(padding: const EdgeInsets.only(top: 24), child: Column(children: [
+            const Text('Could not load your files.', style: TextStyle(color: C.muted)),
+            TextButton(onPressed: _load, child: const Text('Retry')),
+          ])),
           if (_loading && _files.isEmpty && _folders.isEmpty) ...[const Skeleton(), const Skeleton()],
           if (_folders.isNotEmpty || _files.isNotEmpty)
             Padding(padding: const EdgeInsets.fromLTRB(4, 8, 4, 4),
@@ -184,7 +196,16 @@ class _CloudScreenState extends State<CloudScreen> {
               title: Text(d['name'] as String),
               onTap: () { setState(() => _path.add(d)); _load(); },
               trailing: IconButton(tooltip: 'Delete folder', icon: const Icon(Icons.delete_outline), onPressed: () async {
-                await app.api.deleteFolder(d['id'] as String);
+                final ok = await showDialog<bool>(context: context, builder: (c) => AlertDialog(
+                  title: Text('Delete ${d['name']}?'), content: const Text('The folder and everything in it will be removed.'),
+                  actions: [TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Cancel')),
+                    FilledButton(style: FilledButton.styleFrom(backgroundColor: C.danger), onPressed: () => Navigator.pop(c, true), child: const Text('Delete'))]));
+                if (ok != true) return;
+                try {
+                  await app.api.deleteFolder(d['id'] as String);
+                } catch (e) {
+                  if (context.mounted) toast(context, friendlyError(e));
+                }
                 _load();
               }),
             ),
@@ -193,10 +214,10 @@ class _CloudScreenState extends State<CloudScreen> {
               leading: Container(width: 40, height: 40, decoration: BoxDecoration(color: C.surface2, borderRadius: BorderRadius.circular(10)),
                   child: Icon(_iconFor(f['mime'] as String?), color: C.primary)),
               title: Text(f['name'] as String, maxLines: 1, overflow: TextOverflow.ellipsis),
-              subtitle: Text(formatBytes(f['size_bytes'] as num)),
+              subtitle: Text(formatBytes(f['size_bytes'] as num? ?? 0)),
               onTap: () => _fileMenu(f),
             ),
-          if (!_loading && !app.api.isGuest && _files.isEmpty && _folders.isEmpty && _uploads.isEmpty && s.quotaBytes > 0)
+          if (!_loading && !_error && !app.api.isGuest && _files.isEmpty && _folders.isEmpty && _uploads.isEmpty && s.quotaBytes > 0)
             const Padding(padding: EdgeInsets.only(top: 32), child: Text('No files yet. Tap Upload to back up photos, videos and files.',
                 textAlign: TextAlign.center, style: TextStyle(color: C.muted))),
         ]),

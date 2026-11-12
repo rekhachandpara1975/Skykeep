@@ -83,14 +83,14 @@ class _PlanPickerState extends State<PlanPicker> {
         const SizedBox(height: 8),
       ],
       Row(children: [
-        for (final c in chips) Expanded(child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 4),
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 14),
+        for (final (i, c) in chips.indexed) Expanded(child: Container(
+          margin: EdgeInsets.only(left: i == 0 ? 0 : 8),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
           decoration: BoxDecoration(color: C.surface, borderRadius: BorderRadius.circular(18), border: Border.all(color: C.border)),
           child: Text(c, textAlign: TextAlign.center, maxLines: 2, style: const TextStyle(fontWeight: FontWeight.w600)),
         )),
       ]),
-      const SizedBox(height: 20),
+      const SizedBox(height: 16),
       const Text('Choose your plan', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
       const SizedBox(height: 12),
       for (final p in plans)
@@ -103,7 +103,7 @@ class _PlanPickerState extends State<PlanPicker> {
       ),
       if (!canPay) const Padding(padding: EdgeInsets.only(top: 8),
           child: Text('Payments are paused right now. Please try again later.', textAlign: TextAlign.center, style: TextStyle(color: C.muted))),
-      const SizedBox(height: 16),
+      const SizedBox(height: 8),
       const PolicyLinks(),
     ]);
   }
@@ -176,9 +176,14 @@ class PolicyLinks extends StatelessWidget {
   const PolicyLinks({super.key});
   static void open(String path) => launchUrl(Uri.parse('${Config.websiteUrl}$path'), mode: LaunchMode.externalApplication);
   @override
-  Widget build(BuildContext context) => Wrap(alignment: WrapAlignment.center, spacing: 4, children: [
-        TextButton(onPressed: () => open('/privacy'), child: const Text('Privacy Policy')),
-        TextButton(onPressed: () => open('/terms'), child: const Text('Terms & Conditions')),
-        TextButton(onPressed: () => open('/refund'), child: const Text('Refund Policy')),
-      ]);
+  Widget build(BuildContext context) {
+    final style = TextButton.styleFrom(
+        minimumSize: const Size(48, 40), padding: const EdgeInsets.symmetric(horizontal: 10),
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap, textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600));
+    return Wrap(alignment: WrapAlignment.center, children: [
+      TextButton(style: style, onPressed: () => open('/privacy'), child: const Text('Privacy Policy')),
+      TextButton(style: style, onPressed: () => open('/terms'), child: const Text('Terms & Conditions')),
+      TextButton(style: style, onPressed: () => open('/refund'), child: const Text('Refund Policy')),
+    ]);
+  }
 }
