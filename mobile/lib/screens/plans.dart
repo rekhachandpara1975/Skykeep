@@ -29,7 +29,7 @@ String planUnitPrice(Json p) {
   return '₹${_num(price / days)} / day';
 }
 
-/// Native plan picker (Premium tab): perks, one row per plan, "Get <plan> · ₹<price>".
+/// Native plan picker (Premium tab): perks, one row per plan, and a "Get `plan` · ₹`price`" button.
 class PlanPicker extends StatefulWidget {
   const PlanPicker({super.key});
   @override

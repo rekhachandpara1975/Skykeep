@@ -79,6 +79,10 @@ class _LoginSheetState extends State<LoginSheet> {
 
   bool _show = false;
 
+  void _close() {
+    if (mounted) Navigator.pop(context);
+  }
+
   @override
   Widget build(BuildContext context) {
     final app = AppScope.read(context);
@@ -127,7 +131,7 @@ class _LoginSheetState extends State<LoginSheet> {
                 ? _run(() async {
                     await api.signUp(_email.text.trim(), _password.text);
                     await app.refresh();
-                    if (!api.isGuest && mounted) Navigator.pop(context); // account ready at once
+                    if (!api.isGuest) _close(); // account ready at once
                   }, info: 'Check your email to confirm, then come back.')
                 : _run(() => api.signIn(_email.text.trim(), _password.text), close: true),
           ),
