@@ -1,7 +1,7 @@
 import { requireAdmin, supabaseServer } from '@/lib/supabase/server';
 import { run, str, num } from '@/lib/action';
 import { Submit } from '@/components/ui';
-import { bytes, date, dateTime } from '@/lib/format';
+import { bytes, dateTime } from '@/lib/format';
 
 type SP = { q?: string; source?: string; plan?: string; guest?: string };
 type U = { id: string; email: string | null; display_name: string | null; is_guest: boolean; source: string; ads_access_status: string;

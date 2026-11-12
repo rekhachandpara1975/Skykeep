@@ -3,7 +3,7 @@ import { revalidatePath } from 'next/cache';
 import { requireAdmin, supabaseServer } from '@/lib/supabase/server';
 import { run, str } from '@/lib/action';
 import { Submit } from '@/components/ui';
-import { date, dateTime } from '@/lib/format';
+import { dateTime } from '@/lib/format';
 
 const TABS = ['pending', 'approved', 'rejected'] as const;
 
