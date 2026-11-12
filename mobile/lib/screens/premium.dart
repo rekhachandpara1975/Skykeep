@@ -36,7 +36,7 @@ class PremiumScreen extends StatelessWidget {
         title: Row(mainAxisSize: MainAxisSize.min, children: [
           const Icon(Icons.workspace_premium, color: C.gold),
           const SizedBox(width: 8),
-          Text(mode == PremiumMode.web && !s.hasPlan ? 'Go Premium' : 'Premium'),
+          Flexible(child: Text(mode == PremiumMode.web && !s.hasPlan ? 'Go Premium' : 'Premium', overflow: TextOverflow.ellipsis)),
         ]),
         actions: const [ProfileButton()],
       ),

@@ -138,11 +138,11 @@ class PlanRow extends StatelessWidget {
                 border: Border.all(color: selected ? C.primaryDark : C.border, width: selected ? 2 : 1),
               ),
               child: IntrinsicHeight(child: Row(children: [
-                SizedBox(width: 104, child: Center(child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 22),
-                  child: Text(free ? 'FREE' : '₹${_num(plan['price_inr'] as num)}',
-                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: fg)),
-                ))),
+                SizedBox(width: 104, child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 22, horizontal: 8),
+                  child: FittedBox(fit: BoxFit.scaleDown, child: Text(free ? 'FREE' : '₹${_num(plan['price_inr'] as num)}',
+                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: fg))),
+                )),
                 VerticalDivider(width: 1, thickness: 1, color: selected ? const Color(0x66FFFFFF) : C.border),
                 Expanded(child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
