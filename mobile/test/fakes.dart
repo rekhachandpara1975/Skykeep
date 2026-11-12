@@ -116,6 +116,20 @@ class FakePlay extends PlayIntegrity {
   Future<String> token(String nonce) async => 'integrity-token';
 }
 
+class FakeUpi extends UpiLauncher {
+  FakeUpi(this.result);
+  UpiLaunch result;
+  String? lastUri;
+  @override
+  Future<UpiLaunch> pay(String uri) async {
+    lastUri = uri;
+    return result;
+  }
+
+  @override
+  Future<List<int>?> qr(String uri, {int size = 600}) async => null;
+}
+
 Future<AppController> makeController(FakeApi api, {UpiLauncher? upi, PlayIntegrity? play}) async {
   SharedPreferences.setMockInitialValues({});
   final prefs = await SharedPreferences.getInstance();
