@@ -24,15 +24,22 @@ const _fontDir = String.fromEnvironment('FONT_DIR');
 
 Future<void> _loadFonts() async {
   final dir = Directory(_fontDir);
+  // Styles that name no font fall back to the test font ("FlutterTest", drawn as blocks); on phones they use Roboto,
+  // so register Roboto under both names.
   final roboto = FontLoader('Roboto');
+  final fallback = FontLoader('FlutterTest');
   final icons = FontLoader('MaterialIcons');
   for (final f in dir.listSync().whereType<File>()) {
     final name = f.uri.pathSegments.last;
-    final bytes = Future.value(ByteData.sublistView(f.readAsBytesSync()));
-    if (name.startsWith('Roboto') && name.endsWith('.ttf')) roboto.addFont(bytes);
-    if (name.startsWith('MaterialIcons')) icons.addFont(bytes);
+    final bytes = ByteData.sublistView(f.readAsBytesSync());
+    if (name.startsWith('Roboto') && name.endsWith('.ttf')) {
+      roboto.addFont(Future.value(bytes));
+      fallback.addFont(Future.value(bytes));
+    }
+    if (name.startsWith('MaterialIcons')) icons.addFont(Future.value(bytes));
   }
   await roboto.load();
+  await fallback.load();
   await icons.load();
 }
 
