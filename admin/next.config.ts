@@ -13,7 +13,7 @@ const config: NextConfig = {
     return [
       { source: '/:path*', headers: security },
       // admin can never be framed or indexed
-      { source: '/admin/:path*', headers: [{ key: 'X-Frame-Options', value: 'DENY' }, { key: 'X-Robots-Tag', value: 'noindex, nofollow' }] },
+      { source: '/control-7x2k/:path*', headers: [{ key: 'X-Frame-Options', value: 'DENY' }, { key: 'X-Robots-Tag', value: 'noindex, nofollow' }] },
       // /subscribe runs inside the app WebView only
       { source: '/subscribe', headers: [{ key: 'X-Robots-Tag', value: 'noindex' }] },
     ];
