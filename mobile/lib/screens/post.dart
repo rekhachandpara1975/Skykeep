@@ -124,7 +124,9 @@ class _MediaItemState extends State<MediaItem> {
   Future<void> _download() async {
     final app = AppScope.read(context);
     final url = await app.api.signedUrl('media', _play?['key'] as String?, download: true);
-    if (url != null) await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+    if (!mounted) return;
+    if (url == null) { toast(context, 'Could not start the download. Please try again.'); return; }
+    await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
   }
 
   @override
@@ -145,7 +147,7 @@ class _MediaItemState extends State<MediaItem> {
         Padding(padding: const EdgeInsets.only(top: 8), child: Text(
             s.plansVisible && Config.sellsPlans ? 'Trailer · Get Premium to watch the full video' : 'Trailer · Full video for Premium members',
             style: const TextStyle(color: C.goldText, fontWeight: FontWeight.w600))),
-      if (kind == 'full' && widget.item['is_premium'] == true && s.isPremium)
+      if (kind == 'full') // the server only returns 'full' to people allowed to have the file
         Align(alignment: Alignment.centerLeft,
             child: TextButton.icon(onPressed: _download, icon: const Icon(Icons.download), label: const Text('Download'))),
     ]);

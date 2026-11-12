@@ -72,6 +72,7 @@ class _CloudScreenState extends State<CloudScreen> {
     final action = await showModalBottomSheet<String>(context: context, backgroundColor: C.surface, builder: (c) => SafeArea(
       child: Wrap(children: [
         ListTile(leading: const Icon(Icons.open_in_new), title: const Text('Open'), onTap: () => Navigator.pop(c, 'open')),
+        ListTile(leading: const Icon(Icons.download), title: const Text('Download'), onTap: () => Navigator.pop(c, 'download')),
         ListTile(leading: const Icon(Icons.edit), title: const Text('Rename'), onTap: () => Navigator.pop(c, 'rename')),
         ListTile(leading: const Icon(Icons.drive_file_move), title: const Text('Move'), onTap: () => Navigator.pop(c, 'move')),
         ListTile(leading: const Icon(Icons.delete, color: C.danger), title: const Text('Delete'), onTap: () => Navigator.pop(c, 'delete')),
@@ -81,6 +82,9 @@ class _CloudScreenState extends State<CloudScreen> {
       switch (action) {
         case 'open':
           final url = await api.fileUrl(f['id'] as String);
+          if (url != null) await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+        case 'download':
+          final url = await api.fileUrl(f['id'] as String, download: true);
           if (url != null) await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
         case 'rename':
           final n = await askText(context, 'Rename', f['name'] as String);

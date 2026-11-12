@@ -29,7 +29,7 @@ serve(async (req) => {
   if (body.action === 'download') {
     const { data: f } = await db.from('cloud_files').select('storage_key,name').eq('id', body.id).maybeSingle();
     if (!f) return json({ error: 'not found' }, 404);
-    const { data, error } = await db.storage.from('cloud').createSignedUrl(f.storage_key, 3600);
+    const { data, error } = await db.storage.from('cloud').createSignedUrl(f.storage_key, 3600, body.save ? { download: f.name } : undefined);
     if (error) throw error;
     return json({ url: data.signedUrl, name: f.name, expires_in: 3600 });
   }
