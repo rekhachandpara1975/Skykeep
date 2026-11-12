@@ -270,7 +270,7 @@ class _ChannelPageState extends State<ChannelPage> {
     final approved = ch?['review_status'] == 'approved';
     return Scaffold(
       appBar: AppBar(title: Text(ch?['name'] as String? ?? ''), actions: [
-        if (app.status.plansVisible && !Config.playStore)
+        if (app.status.plansVisible && Config.sellsPlans)
           IconButton(tooltip: 'Premium', icon: const Icon(Icons.workspace_premium, color: C.gold),
               onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PremiumScreen()))),
         if (mine) IconButton(tooltip: 'Edit channel', icon: const Icon(Icons.edit), onPressed: () async { await openChannelForm(context, channel: ch); _load(); }),

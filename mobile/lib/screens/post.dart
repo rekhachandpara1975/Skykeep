@@ -135,7 +135,7 @@ class _MediaItemState extends State<MediaItem> {
     if (!_loaded) return const Skeleton(height: 200);
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       if (kind == 'locked')
-        _Locked(plansVisible: s.plansVisible && !Config.playStore)
+        _Locked(plansVisible: s.plansVisible && Config.sellsPlans)
       else if (kind != null && isVideo)
         Player(itemId: widget.item['id'] as String, storageKey: _play!['key'] as String, trailer: kind == 'trailer')
       else if (kind != null)
@@ -143,7 +143,7 @@ class _MediaItemState extends State<MediaItem> {
             child: AspectRatio(aspectRatio: 16 / 9, child: MediaThumb(keyName: _play!['key'] as String))),
       if (kind == 'trailer')
         Padding(padding: const EdgeInsets.only(top: 8), child: Text(
-            s.plansVisible && !Config.playStore ? 'Trailer · Get Premium to watch the full video' : 'Trailer · Full video for Premium members',
+            s.plansVisible && Config.sellsPlans ? 'Trailer · Get Premium to watch the full video' : 'Trailer · Full video for Premium members',
             style: const TextStyle(color: C.goldText, fontWeight: FontWeight.w600))),
       if (kind == 'full' && widget.item['is_premium'] == true && s.isPremium)
         Align(alignment: Alignment.centerLeft,

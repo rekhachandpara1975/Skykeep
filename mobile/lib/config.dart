@@ -7,8 +7,12 @@ class Config {
   static const supabaseUrl = String.fromEnvironment('SUPABASE_URL');
   static const supabaseKey = String.fromEnvironment('SUPABASE_PUBLISHABLE_KEY');
 
-  /// Google Play build: never shows UPI, prices or the plans WebView.
+  /// Google Play build (package com.skykeep.play, Play Integrity for 15 GB free).
   static const playStore = bool.fromEnvironment('PLAY_STORE');
+
+  /// Owner's choice: the Play build also sells plans with UPI (PLAY_SELLS_UPI=true).
+  /// Without it the Play build shows no prices, UPI or plans.
+  static const sellsPlans = !playStore || bool.fromEnvironment('PLAY_SELLS_UPI');
 
   /// Set only for the ads APK, e.g. utm_source=meta&utm_medium=paid_social&utm_campaign=apk_download.
   static const apkReferrer = String.fromEnvironment('APK_REFERRER');
