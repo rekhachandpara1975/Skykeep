@@ -71,7 +71,7 @@ class _PostScreenState extends State<PostScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final items = [...((_post?['post_items'] as List?) ?? const [])]..sort((a, b) => ((a as Map)['position'] as int).compareTo((b as Map)['position'] as int));
+    final items = [...((_post?['post_items'] as List?) ?? const [])]..sort((a, b) => (((a as Map)['position'] as num?) ?? 0).compareTo(((b as Map)['position'] as num?) ?? 0));
     return Scaffold(
       appBar: AppBar(
         title: Text(_post?['title'] as String? ?? ''),

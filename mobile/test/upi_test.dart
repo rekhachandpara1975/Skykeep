@@ -17,6 +17,9 @@ void main() {
       expect(r.txnRef, 'SK1');
       expect(parseUpiResult('status=success&txnref=SK1').outcome, UpiOutcome.success);
     });
+    test('malformed percent escape does not throw', () {
+      expect(parseUpiResult('Status=SUCCESS&txnRef=100%&note=%E0%A4%A').outcome, UpiOutcome.success);
+    });
     test('FAILURE', () => expect(parseUpiResult('Status=FAILURE&txnRef=SK1').outcome, UpiOutcome.failure));
     test('SUBMITTED / PENDING', () {
       expect(parseUpiResult('Status=SUBMITTED&txnRef=SK1').outcome, UpiOutcome.submitted);
