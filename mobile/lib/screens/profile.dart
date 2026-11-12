@@ -252,19 +252,16 @@ class SettingsScreen extends StatelessWidget {
       body: SafeArea(child: CustomScrollView(slivers: [SliverFillRemaining(hasScrollBody: false, child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          GridView.count(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            crossAxisCount: 2,
-            mainAxisSpacing: 12,
-            crossAxisSpacing: 12,
-            childAspectRatio: 2.6,
-            children: [
-              policy('Privacy Policy', '/privacy'),
-              policy('Terms & Conditions', '/terms'),
-              policy('Community Guidelines', '/terms#community'),
-              policy('Refund Policy', '/refund'),
-            ],
+          for (final pair in const [
+            [('Privacy Policy', '/privacy'), ('Terms & Conditions', '/terms')],
+            [('Community Guidelines', '/terms#community'), ('Refund Policy', '/refund')],
+          ]) Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Row(children: [
+              Expanded(child: SizedBox(height: 72, child: policy(pair[0].$1, pair[0].$2))),
+              const SizedBox(width: 12),
+              Expanded(child: SizedBox(height: 72, child: policy(pair[1].$1, pair[1].$2))),
+            ]),
           ),
           const SizedBox(height: 8),
           TextButton(onPressed: () => launchUrl(Uri.parse('mailto:${Config.supportEmail}')), child: const Text('Contact support')),
