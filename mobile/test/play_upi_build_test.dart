@@ -1,5 +1,4 @@
 // Run with: flutter test --dart-define=PLAY_STORE=true --dart-define=PLAY_SELLS_UPI=true test/play_upi_build_test.dart
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:skykeep/config.dart';
 import 'package:skykeep/screens/premium.dart';
