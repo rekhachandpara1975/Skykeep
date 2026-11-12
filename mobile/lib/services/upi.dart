@@ -29,7 +29,10 @@ UpiResult parseUpiResult(String? raw) {
   for (final part in raw.split(RegExp(r'[&?]'))) {
     final i = part.indexOf('=');
     if (i <= 0) continue;
-    map[part.substring(0, i).trim().toLowerCase()] = Uri.decodeComponent(part.substring(i + 1).trim().replaceAll('+', ' '));
+    final v = part.substring(i + 1).trim().replaceAll('+', ' ');
+    String decoded;
+    try { decoded = Uri.decodeComponent(v); } catch (_) { decoded = v; } // malformed %-escapes must not crash
+    map[part.substring(0, i).trim().toLowerCase()] = decoded;
   }
   final status = (map['status'] ?? '').toUpperCase();
   final outcome = switch (status) {
