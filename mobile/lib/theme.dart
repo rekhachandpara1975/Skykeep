@@ -48,13 +48,13 @@ ThemeData buildTheme({bool googleFonts = true}) {
     ),
     appBarTheme: const AppBarTheme(
       backgroundColor: C.background, foregroundColor: C.text, elevation: 0, scrolledUnderElevation: 0, centerTitle: false,
-      titleTextStyle: TextStyle(color: C.text, fontSize: 22, fontWeight: FontWeight.w700),
+      titleTextStyle: TextStyle(fontFamily: 'Roboto', color: C.text, fontSize: 22, fontWeight: FontWeight.w700),
     ),
     navigationBarTheme: NavigationBarThemeData(
       backgroundColor: C.surface, elevation: 0, height: 68, indicatorColor: C.primarySoft,
       surfaceTintColor: Colors.transparent,
       iconTheme: WidgetStateProperty.resolveWith((s) => IconThemeData(color: s.contains(WidgetState.selected) ? C.primary : C.muted)),
-      labelTextStyle: WidgetStateProperty.resolveWith((s) => TextStyle(fontSize: 12,
+      labelTextStyle: WidgetStateProperty.resolveWith((s) => TextStyle(fontFamily: 'Roboto', fontSize: 12,
           fontWeight: s.contains(WidgetState.selected) ? FontWeight.w600 : FontWeight.w500,
           color: s.contains(WidgetState.selected) ? C.primary : C.muted)),
     ),
@@ -66,14 +66,14 @@ ThemeData buildTheme({bool googleFonts = true}) {
     ),
     filledButtonTheme: FilledButtonThemeData(style: FilledButton.styleFrom(
       backgroundColor: C.primary, foregroundColor: Colors.white, minimumSize: const Size(64, 48),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)), textStyle: const TextStyle(fontWeight: FontWeight.w600))),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)), textStyle: const TextStyle(fontFamily: 'Roboto', fontWeight: FontWeight.w600))),
     outlinedButtonTheme: OutlinedButtonThemeData(style: OutlinedButton.styleFrom(
       foregroundColor: C.primary, minimumSize: const Size(64, 48), side: const BorderSide(color: C.border),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)), textStyle: const TextStyle(fontWeight: FontWeight.w600))),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)), textStyle: const TextStyle(fontFamily: 'Roboto', fontWeight: FontWeight.w600))),
     textButtonTheme: TextButtonThemeData(style: TextButton.styleFrom(foregroundColor: C.primary)),
     floatingActionButtonTheme: const FloatingActionButtonThemeData(backgroundColor: C.primary, foregroundColor: Colors.white, shape: CircleBorder()),
     chipTheme: const ChipThemeData(backgroundColor: C.surface, selectedColor: C.primarySoft, side: BorderSide(color: C.border),
-        labelStyle: TextStyle(color: C.text), shape: StadiumBorder()),
+        labelStyle: TextStyle(fontFamily: 'Roboto', color: C.text), shape: StadiumBorder()),
     listTileTheme: const ListTileThemeData(iconColor: C.muted),
     bottomSheetTheme: const BottomSheetThemeData(backgroundColor: C.surface, surfaceTintColor: Colors.transparent),
     dialogTheme: const DialogThemeData(backgroundColor: C.surface, surfaceTintColor: Colors.transparent),
