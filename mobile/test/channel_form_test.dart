@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:skykeep/screens/channels.dart';
+import 'package:skykeep/theme.dart';
 
 import 'fakes.dart';
 
@@ -12,11 +13,11 @@ void main() {
     expect(find.text('Category (optional)'), findsOneWidget);
     expect(find.text('Tags (optional, comma separated)'), findsOneWidget);
 
-    await t.ensureVisible(find.text('Create channel').last);
+    await t.ensureVisible(find.widgetWithText(GradientButton, 'Create channel'));
     await t.pumpAndSettle();
-    await t.tap(find.text('Create channel').last);
+    await t.tap(find.widgetWithText(GradientButton, 'Create channel'));
     await t.pump();
-    expect(find.text('Enter a channel name (at least 2 characters)'), findsOneWidget);
+    expect(find.text('Enter a channel name (at least 2 characters)', skipOffstage: false), findsOneWidget);
 
     await t.enterText(find.widgetWithText(TextField, 'Channel name'), 'Cooking');
     await t.pump();
