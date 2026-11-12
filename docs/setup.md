@@ -56,3 +56,9 @@ On every push to `main`, the `supabase-deploy` job runs `db push` and deploys al
 
 ## 5. Turn on payments
 Admin › Payments › enter your UPI ID and payee name (exactly as your bank shows it) › Save. Then Admin › Plans › add plans. Until a UPI ID is set, payments stay off everywhere.
+
+## Release signing key (done 12 Nov 2026)
+- Keystore `skykeep-release.jks`, alias `skykeep`, certificate `CN=SkyKeep, O=SkyKeep, C=IN`. Kept by the owner; it is never committed.
+- GitHub secrets: `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`.
+- SHA-256 fingerprint (public; used by `/.well-known/assetlinks.json` via Vercel env `ANDROID_SIGNING_SHA256`):
+  `2E:40:74:C2:F0:97:81:C2:7E:7D:A9:32:6D:9C:92:33:80:D0:17:D3:10:88:77:4D:D1:7C:61:A2:3E:56:ED:35`
