@@ -27,6 +27,10 @@ serve(async (req) => {
   }
 
   if (body.action === 'download') {
+    if (body.save) {
+      const { data: ok } = await db.rpc('has_full_access');
+      if (ok !== true) return json({ error: 'Downloads are for Premium members' }, 403);
+    }
     const { data: f } = await db.from('cloud_files').select('storage_key,name').eq('id', body.id).maybeSingle();
     if (!f) return json({ error: 'not found' }, 404);
     const { data, error } = await db.storage.from('cloud').createSignedUrl(f.storage_key, 3600, body.save ? { download: f.name } : undefined);

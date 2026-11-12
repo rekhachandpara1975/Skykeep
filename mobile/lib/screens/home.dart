@@ -22,6 +22,7 @@ class HomeShellState extends State<HomeShell> {
   late int _tab = widget.initialTab;
   static const _pages = [ExploreScreen(), FeedScreen(), ChannelsScreen(), CloudScreen(), PremiumScreen()];
   static const cloudTab = 3;
+  static const premiumTab = 4;
 
   /// The live shell, so pushed pages (Profile → "My cloud") can switch tabs.
   static HomeShellState? current;

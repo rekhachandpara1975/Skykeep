@@ -11,6 +11,7 @@ import '../services/api.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 import 'explore.dart';
+import 'home.dart' show HomeShellState;
 import 'login_sheet.dart';
 import 'premium.dart';
 
@@ -123,6 +124,11 @@ class _MediaItemState extends State<MediaItem> {
 
   Future<void> _download() async {
     final app = AppScope.read(context);
+    if (!app.status.isPremium) {
+      toast(context, 'Downloads are for Premium members');
+      if (Config.sellsPlans) { Navigator.of(context).popUntil((r) => r.isFirst); HomeShellState.current?.go(HomeShellState.premiumTab); }
+      return;
+    }
     final url = await app.api.signedUrl('media', _play?['key'] as String?, download: true);
     if (!mounted) return;
     if (url == null) { toast(context, 'Could not start the download. Please try again.'); return; }
