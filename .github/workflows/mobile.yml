@@ -146,6 +146,16 @@ jobs:
           (cd store && zip -q ../SkyKeep-store-assets.zip *.png)
       - uses: actions/upload-artifact@v4
         with: { name: SkyKeep-store-assets, path: store }
+      - name: Keep a copy in the repo (pull requests from this repo)
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        run: |
+          git fetch -q origin "${{ github.head_ref }}" && git checkout -q "${{ github.head_ref }}"
+          mkdir -p docs/store-listing && cp store/*.png docs/store-listing/
+          if [ -n "$(git status --porcelain docs/store-listing)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add docs/store-listing && git commit -qm "Update Play Store listing graphics" && git push -q
+          fi
       - name: Add to the download release (main only)
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env: { GH_TOKEN: '${{ github.token }}' }
