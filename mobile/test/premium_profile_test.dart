@@ -74,6 +74,18 @@ void main() {
       expect(find.text('Add Channel'), findsOneWidget);
     });
 
+    testWidgets('guest: account line is not a repeated "Guest"', (t) async {
+      await pumpApp(t, FakeApi(guest: true, status: statusJson(guest: true)), const ProfileScreen());
+      expect(find.text('Guest'), findsOneWidget);
+      expect(find.text('Not logged in'), findsOneWidget);
+    });
+
+    testWidgets('guest who bought a plan sees the plan on the account card', (t) async {
+      await pumpApp(t, FakeApi(guest: true, status: statusJson(guest: true, hasPlan: true, premium: true, quota: 2199023255552)), const ProfileScreen());
+      expect(find.text('Yearly active until 9 Nov 2027'), findsOneWidget);
+      expect(find.text('Not logged in'), findsNothing);
+    });
+
     testWidgets('member without plan: Go Premium tile, no link-email banner', (t) async {
       await pumpApp(t, FakeApi(status: statusJson()), const ProfileScreen());
       expect(find.text('Go Premium'), findsOneWidget);

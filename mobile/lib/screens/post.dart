@@ -53,8 +53,12 @@ class _PostScreenState extends State<PostScreen> {
       ])),
     );
     if (reason == null || !mounted) return;
-    await AppScope.read(context).api.report('post', widget.postId, reason, null);
-    if (mounted) toast(context, 'Thanks — our team will review it.');
+    try {
+      await AppScope.read(context).api.report('post', widget.postId, reason, null);
+      if (mounted) toast(context, 'Thanks — our team will review it.');
+    } catch (e) {
+      if (mounted) toast(context, friendlyError(e));
+    }
   }
 
   Future<void> _block() async {
@@ -66,8 +70,12 @@ class _PostScreenState extends State<PostScreen> {
       actions: [TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Cancel')),
         FilledButton(onPressed: () => Navigator.pop(c, true), child: const Text('Block'))]));
     if (ok != true || !mounted) return;
-    await AppScope.read(context).api.blockChannel(ch['id'] as String);
-    if (mounted) { toast(context, 'Channel blocked'); Navigator.pop(context); }
+    try {
+      await AppScope.read(context).api.blockChannel(ch['id'] as String);
+      if (mounted) { toast(context, 'Channel blocked'); Navigator.pop(context); }
+    } catch (e) {
+      if (mounted) toast(context, friendlyError(e));
+    }
   }
 
   @override
@@ -200,10 +208,24 @@ class _PlayerState extends State<Player> {
     WidgetsBinding.instance.addPostFrameCallback((_) => _open());
   }
 
+  bool _opening = false;
+  int _autoRetries = 0;
+
   Future<void> _open({bool refresh = false}) async {
+    if (!mounted || _opening) return; // one open at a time: the error listener can fire many times
+    _opening = true;
+    try {
+      await _openOnce(refresh: refresh);
+    } finally {
+      _opening = false;
+    }
+  }
+
+  Future<void> _openOnce({required bool refresh}) async {
     final app = AppScope.read(context);
     if (refresh) app.api.forgetSigned('media', widget.storageKey);
     final url = await app.api.signedUrl('media', widget.storageKey);
+    if (!mounted) return;
     if (url == null) return setState(() => _failed = true);
     final resumeAt = Duration(milliseconds: _c?.value.position.inMilliseconds ?? app.prefs.getInt(_posKey) ?? 0);
     final old = _c;
@@ -211,9 +233,11 @@ class _PlayerState extends State<Player> {
     try {
       await c.initialize();
       await c.seekTo(resumeAt);
+      if (!mounted) { await c.dispose(); return; }
       c.addListener(() {
-        // signed URL expired mid-stream → refresh and continue
-        if (c.value.hasError && mounted) _open(refresh: true);
+        // signed URL expired mid-stream → refresh and continue (a few times, then show Retry)
+        if (!c.value.hasError || !mounted || c != _c) return;
+        if (_autoRetries++ < 3) { _open(refresh: true); } else { setState(() => _failed = true); }
       });
       setState(() { _c = c; _failed = false; });
       await old?.dispose();
@@ -238,7 +262,7 @@ class _PlayerState extends State<Player> {
   Widget build(BuildContext context) {
     final c = _c;
     if (_failed) {
-      return AspectRatio(aspectRatio: 16 / 9, child: Center(child: OutlinedButton(onPressed: () => _open(refresh: true), child: const Text('Retry video'))));
+      return AspectRatio(aspectRatio: 16 / 9, child: Center(child: OutlinedButton(onPressed: () { _autoRetries = 0; _open(refresh: true); }, child: const Text('Retry video'))));
     }
     if (c == null || !c.value.isInitialized) {
       return const AspectRatio(aspectRatio: 16 / 9, child: Center(child: CircularProgressIndicator()));

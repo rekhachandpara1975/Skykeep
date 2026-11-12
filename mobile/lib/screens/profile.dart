@@ -81,14 +81,14 @@ class ProfileScreen extends StatelessWidget {
             ),
           ],
           const SizedBox(height: 12),
-          Row(children: [
+          IntrinsicHeight(child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             if (sellsHere || s.hasPlan) ...[
               Expanded(child: _Tile(
                 icon: Icons.workspace_premium, label: s.hasPlan ? 'My plan' : 'Go Premium', highlighted: !s.hasPlan, onTap: openPremium)),
               const SizedBox(width: 12),
             ],
             Expanded(child: _Tile(icon: Icons.cloud_outlined, label: 'My cloud', onTap: openCloud)),
-          ]),
+          ])),
           if (s.hasPlan || sellsHere) ...[
             const SizedBox(height: 12),
             Card(child: ListTile(
@@ -100,7 +100,7 @@ class ProfileScreen extends StatelessWidget {
             )),
           ],
           Padding(
-            padding: const EdgeInsets.only(top: 20, bottom: 4),
+            padding: const EdgeInsets.only(top: 12),
             child: Row(children: [
               const Expanded(child: Text('My Channels', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700))),
               TextButton(onPressed: () => openChannelForm(context), child: const Text('Add Channel')),
@@ -184,10 +184,10 @@ class AccountCard extends StatelessWidget {
     final rawEmail = AppScope.read(context).api.user?.email;
     final email = (rawEmail == null || rawEmail.isEmpty) ? null : rawEmail; // guests have an empty email
     final String planLine;
-    if (isGuest) {
-      planLine = 'Guest';
-    } else if (status.hasPlan) {
-      planLine = '${status.planName ?? 'Premium'} active until ${formatPlanEnd(status.planEndsAt)}';
+    if (status.hasPlan) {
+      planLine = '${status.planName ?? 'Premium'} active until ${formatPlanEnd(status.planEndsAt)}'; // guests can hold a plan too
+    } else if (isGuest) {
+      planLine = 'Not logged in';
     } else if (status.freeMode && status.isOrganic) {
       planLine = switch (status.accessStatus) { 'approved' => 'Full access', 'pending' => 'Full access requested', _ => 'Free account' };
     } else if (status.freeMode) {

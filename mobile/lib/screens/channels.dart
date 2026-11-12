@@ -81,7 +81,11 @@ class _ChannelListState extends State<ChannelList> {
     return api.channels(widget.tab);
   }
 
-  Future<void> _refresh() async { setState(() => _f = _load()); await _f; }
+  Future<void> _refresh() async {
+    if (!mounted) return;
+    setState(() => _f = _load());
+    try { await _f; } catch (_) {} // the list shows its own retry
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -227,6 +231,7 @@ class _ChannelPageState extends State<ChannelPage> {
   }
 
   Future<void> _load() async {
+    if (!mounted) return;
     final api = AppScope.read(context).api;
     try {
       _ch = await api.channel(widget.channelId);
@@ -253,6 +258,7 @@ class _ChannelPageState extends State<ChannelPage> {
   Future<void> _upload() async {
     if (!await requireConsent(context)) return;
     if (!mounted) return;
+    if (!AppScope.read(context).status.isPremium) { toast(context, 'Uploading content is for Premium members'); return; }
     final file = await FilePicker.pickFile(type: FileType.media);
     if (file == null || !mounted) return;
     final title = await _ask(context, 'Post title', file.name.split('.').first);
@@ -291,7 +297,7 @@ class _ChannelPageState extends State<ChannelPage> {
               ? const EmptyState(icon: Icons.lock_outline, title: 'Channel not available')
               : RefreshIndicator(
                   onRefresh: _load,
-                  child: ListView(padding: const EdgeInsets.all(16), children: [
+                  child: ListView(physics: const AlwaysScrollableScrollPhysics(), padding: const EdgeInsets.all(16), children: [
                     Row(children: [
                       ChannelIcon(keyName: ch['icon_url'] as String?, size: 64),
                       const SizedBox(width: 12),

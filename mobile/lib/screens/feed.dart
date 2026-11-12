@@ -48,14 +48,15 @@ class _FeedScreenState extends State<FeedScreen> {
   }
 
   Future<void> _load({bool force = false}) async {
-    if (!force && (_loading || !_more)) return;
+    if (!mounted || (!force && (_loading || !_more))) return;
     setState(() => _loading = true);
     try {
       final api = AppScope.read(context).api;
       final xs = _tab == 0 ? await api.followingPosts(page: _page) : await api.latestPosts(page: _page);
+      if (!mounted) return;
       setState(() { _posts.addAll(xs); _page++; _more = xs.length == Api.pageSize; });
     } catch (_) {
-      setState(() => _error = true);
+      if (mounted) setState(() => _error = true);
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -93,7 +94,7 @@ class _FeedScreenState extends State<FeedScreen> {
       ]),
       body: Column(children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
           child: PillTabs(labels: const ['Following', 'For You'], index: _tab, onChanged: (i) { if (i != _tab) { _tab = i; _reload(); } }),
         ),
         Expanded(child: RefreshIndicator(onRefresh: _reload, child: body)),
