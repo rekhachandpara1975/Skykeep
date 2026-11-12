@@ -24,7 +24,9 @@ export async function savePaymentMode(f: FormData) {
   await requireAdmin(true);
   await run('/admin/payments', 'Saved', async () => {
     const sb = await supabaseServer();
-    return sb.from('payment_settings').update({ enabled: str(f, 'enabled') === 'on' }).eq('id', true);
+    const r = await sb.from('payment_settings').update({ enabled: str(f, 'enabled') === 'on' }).eq('id', true);
+    if (r.error) return r;
+    return sb.rpc('admin_set_activation_mode', { p_mode: str(f, 'instant') === 'on' ? 'instant' : 'manual' });
   });
 }
 

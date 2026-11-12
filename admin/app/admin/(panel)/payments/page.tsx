@@ -71,13 +71,20 @@ export default async function Payments({ searchParams }: { searchParams: Promise
         <section className="card">
           <h2 className="h2">How payments are verified</h2>
           <ol className="mb-3 list-decimal space-y-1 pl-5 text-sm">
-            <li>The buyer pays in their UPI app. The app&apos;s answer is only a hint — no plan is ever activated from the phone.</li>
-            <li>Orders with a valid UPI answer, or a 12-digit UTR typed by the buyer (plus optional screenshot), appear under <b>To verify</b>.</li>
+            {ps?.activation_mode === 'instant' ? (<>
+              <li>The buyer pays in their UPI app. When the app answers <b>SUCCESS</b> for that exact order (right reference, a new transaction id/UTR),
+                the plan turns on <b>instantly</b>. At most 3 instant activations per buyer per day; more go to <b>To verify</b>.</li>
+              <li>Every instant activation appears under <b>Activated today — verify against bank</b>. Find it in your bank → <b>Bank verified</b>. Not there → <b>Revoke</b>.</li>
+            </>) : (<>
+              <li>The buyer pays in their UPI app. The app&apos;s answer is only a hint — no plan is activated from the phone.</li>
+              <li>Orders with a valid UPI answer, or a 12-digit UTR typed by the buyer (plus optional screenshot), appear under <b>To verify</b>.</li>
+            </>)}
             <li>Find the credit in your bank (same amount + UTR) → <b>Approve</b>. Not there → <b>Reject</b>. No UTR yet → type it from your bank and <b>Mark paid</b>.</li>
             <li>Unpaid orders expire after 30 minutes. A buyer can still send proof for 24 hours.</li>
           </ol>
-          <form action={savePaymentMode} className="flex items-center gap-3 text-sm">
+          <form action={savePaymentMode} className="flex flex-wrap items-center gap-3 text-sm">
             <label className="flex items-center gap-2"><input type="checkbox" name="enabled" defaultChecked={ps?.enabled} /> Payments enabled</label>
+            <label className="flex items-center gap-2"><input type="checkbox" name="instant" defaultChecked={ps?.activation_mode === 'instant'} /> Activate instantly when the UPI app says SUCCESS</label>
             <Submit>Save</Submit>
           </form>
         </section>
