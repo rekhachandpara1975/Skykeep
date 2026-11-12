@@ -24,5 +24,12 @@ export function durationLabel(days: number) {
   if (days % 365 === 0) return `= ${days / 365} year${days === 365 ? '' : 's'}`;
   if (days % 30 === 0) return `= ${days / 30} month${days === 30 ? '' : 's'}`;
   if (days % 7 === 0) return `= ${days / 7} week${days === 7 ? '' : 's'}`;
-  return `= ${days} days`;
+  return `= ${days} day${days === 1 ? '' : 's'}`;
+}
+
+/** "6 hours", "2 days", "1 month" — hours win when a plan has them. */
+export function planLength(p: { duration_days: number; duration_hours?: number | null }) {
+  const h = p.duration_hours;
+  if (h) return h % 24 === 0 ? durationLabel(h / 24).slice(2) : `${h} hour${h === 1 ? '' : 's'}`;
+  return durationLabel(p.duration_days).slice(2);
 }

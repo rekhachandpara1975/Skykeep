@@ -40,7 +40,7 @@ export default async function Approvals({ searchParams }: { searchParams: Promis
             {(rows ?? []).map((u: { id: string; email: string; display_name: string; plan_name: string | null; plan_ends_at: string | null; created_at: string }) => (
               <tr key={u.id}>
                 <td><p className="font-medium">{u.display_name ?? '—'}</p><p className="text-xs text-muted">{u.email}</p></td>
-                <td>{u.plan_name ? `${u.plan_name} until ${date(u.plan_ends_at)}` : 'No plan'}</td>
+                <td>{u.plan_name ? `${u.plan_name} until ${dateTime(u.plan_ends_at)}` : 'No plan'}</td>
                 <td className="text-xs">{dateTime(u.created_at)}</td>
                 <td className="whitespace-nowrap text-right">
                   <form action={setAccess} className="inline-flex gap-2">

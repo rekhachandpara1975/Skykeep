@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { supabasePublic } from '@/lib/supabase/server';
-import { rupees, durationLabel } from '@/lib/format';
+import { rupees, planLength } from '@/lib/format';
 import { APP_NAME, SUPPORT_EMAIL } from '@/lib/site';
 
 export const revalidate = 60;
@@ -17,7 +17,7 @@ export default async function Home() {
   const sb = supabasePublic();
   const [{ data: mode }, { data: plans = [] }] = await Promise.all([
     sb.from('app_mode').select('free_mode').single(),
-    sb.from('plans').select('id,name,price_inr,duration_days,perks,badge').eq('active', true).order('position'),
+    sb.from('plans').select('id,name,price_inr,duration_days,duration_hours,perks,badge').eq('active', true).order('position'),
   ]);
   const free = mode?.free_mode ?? false;
 
@@ -54,7 +54,7 @@ export default async function Home() {
               {(plans ?? []).map((p) => (
                 <div key={p.id} className="rounded-2xl border border-white/10 bg-night-2 p-5">
                   <div className="flex items-center justify-between"><h3 className="text-lg font-semibold">{p.name}</h3>{p.badge && <span className="badge bg-amber-400/20 text-amber-300">{p.badge}</span>}</div>
-                  <p className="mt-2 text-3xl font-bold">{rupees(p.price_inr)}</p><p className="text-sm text-slate-400">{durationLabel(p.duration_days).slice(2)}</p>
+                  <p className="mt-2 text-3xl font-bold">{rupees(p.price_inr)}</p><p className="text-sm text-slate-400">{planLength(p)}</p>
                   <ul className="mt-3 space-y-1 text-sm text-slate-300">{p.perks.map((x: string) => <li key={x}>✓ {x}</li>)}</ul>
                 </div>))}
               {!plans?.length && <p className="text-slate-400">Plans are coming soon.</p>}

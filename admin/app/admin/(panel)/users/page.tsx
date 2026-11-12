@@ -49,7 +49,7 @@ export default async function Users({ searchParams }: { searchParams: Promise<SP
               <tr key={u.id}>
                 <td><p className="font-medium">{u.is_guest ? 'Guest' : u.display_name ?? '—'}</p><p className="text-xs text-muted">{u.email ?? u.id.slice(0, 8)}</p></td>
                 <td><span className={`badge ${u.source === 'ads' ? 'bg-violet-100 text-violet-700' : 'bg-slate-100 text-slate-700'}`}>{u.source}</span></td>
-                <td className="text-sm">{u.plan_name ? <>{u.plan_name}<span className="block text-xs text-muted">until {date(u.plan_ends_at)}</span></> : '—'}</td>
+                <td className="text-sm">{u.plan_name ? <>{u.plan_name}<span className="block text-xs text-muted">until {dateTime(u.plan_ends_at)}</span></> : '—'}</td>
                 <td className="text-sm">{u.source === 'ads' ? 'full (ads)' : u.ads_access_status}</td>
                 <td className="text-xs">{bytes(u.used_bytes)}</td>
                 <td className="whitespace-nowrap text-xs">{dateTime(u.created_at)}</td>

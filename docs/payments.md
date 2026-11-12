@@ -47,6 +47,10 @@ Status names: **pending** = waiting for payment, **review** (or `submitted`) = v
 
 Google Play: the Play Store build never shows this checkout and has no Google Play Billing; it is free tier only (`play-store.md`).
 
+## Hour plans
+In Admin › Plans set Duration to e.g. `6` and pick **hours**. The plan lasts exactly that long from activation
+(stacked after any current plan). The app shows the end time, e.g. "active until 12 Nov 2026, 8:30 PM".
+
 ## Instant activation from the UPI app (default)
 When the buyer's UPI app returns **SUCCESS** for the order (the intent callback), the server activates the plan at once,
 but only if all of these hold: the answer's `txnRef` is this order's reference, there is a transaction id / UTR that was

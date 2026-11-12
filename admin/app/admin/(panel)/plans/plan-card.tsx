@@ -1,7 +1,7 @@
 'use client';
 import { useRef } from 'react';
 
-type Plan = { id: string; code: string; name: string; price_inr: number; duration_days: number; perks: string[];
+type Plan = { id: string; code: string; name: string; price_inr: number; duration_days: number; duration_hours: number | null; perks: string[];
   badge: string | null; position: number; active: boolean; free_eligible: boolean };
 
 /** Plan editor; confirms price/duration changes and hiding. */
@@ -14,7 +14,9 @@ export function PlanCard({ plan, action, freeOn, stats, priceLabel, durationHint
     const f = new FormData(e.currentTarget);
     const warn: string[] = [];
     if (Number(f.get('price_inr')) !== plan.price_inr) warn.push(`price ₹${plan.price_inr} → ₹${f.get('price_inr')}`);
-    if (Number(f.get('duration_days')) !== plan.duration_days) warn.push(`duration ${plan.duration_days} → ${f.get('duration_days')} days`);
+    const oldLen = plan.duration_hours ? `${plan.duration_hours} hours` : `${plan.duration_days} days`;
+    const newLen = `${f.get('duration')} ${f.get('duration_unit')}`;
+    if (oldLen !== newLen) warn.push(`duration ${oldLen} → ${newLen}`);
     if (plan.active && !f.get('active')) warn.push('hide it from the app');
     if (warn.length && !window.confirm(`Change ${warn.join(', ')}? Applies to new orders only; existing subscriptions keep their end date.`)) e.preventDefault();
   }
@@ -29,8 +31,13 @@ export function PlanCard({ plan, action, freeOn, stats, priceLabel, durationHint
       <div className="grid grid-cols-2 gap-2">
         <div><label className="label" htmlFor={`name-${plan.id}`}>Name</label><input id={`name-${plan.id}`} name="name" className="input" defaultValue={plan.name} required /></div>
         <div><label className="label" htmlFor={`price-${plan.id}`}>Price ₹</label><input id={`price-${plan.id}`} name="price_inr" type="number" min={1} step={1} className="input" defaultValue={plan.price_inr} required /></div>
-        <div><label className="label" htmlFor={`days-${plan.id}`}>Duration (days) <span className="text-muted">{durationHint}</span></label>
-          <input id={`days-${plan.id}`} name="duration_days" type="number" min={1} max={3660} className="input" defaultValue={plan.duration_days} required /></div>
+        <div><label className="label" htmlFor={`days-${plan.id}`}>Duration <span className="text-muted">= {durationHint}</span></label>
+          <div className="flex gap-1">
+            <input id={`days-${plan.id}`} name="duration" type="number" min={1} max={8784} className="input"
+              defaultValue={plan.duration_hours ?? plan.duration_days} required />
+            <select name="duration_unit" aria-label="Duration unit" className="input w-24" defaultValue={plan.duration_hours ? 'hours' : 'days'}>
+              <option value="days">days</option><option value="hours">hours</option></select>
+          </div></div>
         <div><label className="label" htmlFor={`badge-${plan.id}`}>Badge</label><input id={`badge-${plan.id}`} name="badge" className="input" defaultValue={plan.badge ?? ''} /></div>
         <div><label className="label" htmlFor={`pos-${plan.id}`}>Order</label><input id={`pos-${plan.id}`} name="position" type="number" className="input" defaultValue={plan.position} /></div>
       </div>

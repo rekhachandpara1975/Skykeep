@@ -1,7 +1,7 @@
 import { requireAdmin, supabaseServer } from '@/lib/supabase/server';
 import { run, str, num, bool } from '@/lib/action';
 import { Submit } from '@/components/ui';
-import { count, durationLabel, rupees } from '@/lib/format';
+import { count, planLength, rupees } from '@/lib/format';
 import { PlanCard } from './plan-card';
 
 async function saveMode(f: FormData) {
@@ -18,8 +18,11 @@ async function savePlan(f: FormData) {
   'use server';
   await requireAdmin(true);
   const id = str(f, 'id');
+  const n = num(f, 'duration');
+  const hours = str(f, 'duration_unit') === 'hours';
   const row = {
-    name: str(f, 'name'), price_inr: num(f, 'price_inr'), duration_days: num(f, 'duration_days'),
+    name: str(f, 'name'), price_inr: num(f, 'price_inr'),
+    duration_hours: hours ? n : null, duration_days: hours ? Math.max(1, Math.ceil(n / 24)) : n,
     perks: str(f, 'perks').split('\n').map((p) => p.trim()).filter(Boolean), badge: str(f, 'badge') || null,
     position: num(f, 'position'), active: bool(f, 'active'), free_eligible: bool(f, 'free_eligible'),
   };
@@ -73,7 +76,7 @@ export default async function Plans() {
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {(plans ?? []).map((p) => (
           <PlanCard key={p.id} plan={p} action={savePlan} freeOn={mode?.free_plans_for !== 'none'}
-            stats={pc[p.id] ?? { subscribers: 0, orders: 0 }} priceLabel={rupees(p.price_inr)} durationHint={durationLabel(p.duration_days)} />
+            stats={pc[p.id] ?? { subscribers: 0, orders: 0 }} priceLabel={rupees(p.price_inr)} durationHint={planLength(p)} />
         ))}
         <form action={savePlan} className="card space-y-2 border-dashed">
           <h2 className="h2 mb-0">Add plan</h2>
@@ -81,7 +84,9 @@ export default async function Plans() {
             <div><label className="label" htmlFor="n-code">Code (permanent)</label><input id="n-code" name="code" className="input" required pattern="[a-z0-9_\-]{2,40}" placeholder="monthly" /></div>
             <div><label className="label" htmlFor="n-name">Name</label><input id="n-name" name="name" className="input" required /></div>
             <div><label className="label" htmlFor="n-price">Price ₹</label><input id="n-price" name="price_inr" type="number" min={1} step={1} className="input" required /></div>
-            <div><label className="label" htmlFor="n-days">Duration (days)</label><input id="n-days" name="duration_days" type="number" min={1} max={3660} className="input" required defaultValue={30} /></div>
+            <div><label className="label" htmlFor="n-days">Duration</label>
+              <div className="flex gap-1"><input id="n-days" name="duration" type="number" min={1} max={8784} className="input" required defaultValue={30} />
+                <select name="duration_unit" aria-label="Duration unit" className="input w-28" defaultValue="days"><option value="days">days</option><option value="hours">hours</option></select></div></div>
             <div><label className="label" htmlFor="n-badge">Badge</label><input id="n-badge" name="badge" className="input" placeholder="Best value" /></div>
             <div><label className="label" htmlFor="n-pos">Order</label><input id="n-pos" name="position" type="number" className="input" defaultValue={(plans?.length ?? 0) + 1} /></div>
           </div>

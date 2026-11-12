@@ -90,6 +90,14 @@ String formatDate(DateTime? d) {
   return '${d.day} ${m[d.month - 1]} ${d.year}';
 }
 
+/// Plan end: adds the time when it ends within 3 days (hour plans), e.g. "12 Nov 2026, 8:30 PM".
+String formatPlanEnd(DateTime? d, {DateTime? now}) {
+  if (d == null) return '—';
+  if (d.difference(now ?? DateTime.now()).inHours >= 72) return formatDate(d);
+  final h = d.hour % 12 == 0 ? 12 : d.hour % 12;
+  return '${formatDate(d)}, $h:${d.minute.toString().padLeft(2, '0')} ${d.hour < 12 ? 'AM' : 'PM'}';
+}
+
 /// ₹ with Indian grouping: 123456.5 → ₹1,23,456.50
 String rupees(num v, {bool paise = false}) {
   final whole = v.truncate().abs().toString();

@@ -81,7 +81,7 @@ class AccountCard extends StatelessWidget {
     if (isGuest) {
       planLine = 'Guest';
     } else if (status.hasPlan) {
-      planLine = '${status.planName ?? 'Premium'} active until ${formatDate(status.planEndsAt)}';
+      planLine = '${status.planName ?? 'Premium'} active until ${formatPlanEnd(status.planEndsAt)}';
     } else if (status.freeMode && status.isOrganic) {
       planLine = switch (status.accessStatus) { 'approved' => 'Full access', 'pending' => 'Full access requested', _ => 'Free account' };
     } else if (status.freeMode) {
