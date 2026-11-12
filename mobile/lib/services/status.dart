@@ -115,7 +115,8 @@ String rupees(num v, {bool paise = false}) {
     if (rest.isNotEmpty) parts.insert(0, rest);
     g = '${parts.join(',')},$last3';
   }
-  final frac = ((v.abs() - v.truncate().abs()) * 100).round();
+  var frac = ((v.abs() - v.truncate().abs()) * 100).round();
+  if (frac >= 100) frac = 99; // rounding guard: 1.999 shows as 1.99, never 1.100
   final showFrac = paise || frac != 0;
   return '${v < 0 ? '-' : ''}₹$g${showFrac ? '.${frac.toString().padLeft(2, '0')}' : ''}';
 }

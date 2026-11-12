@@ -47,5 +47,6 @@ void main() {
     expect(rupees(99), '₹99');
     expect(rupees(123456), '₹1,23,456');
     expect(rupees(12345678.5), '₹1,23,45,678.50');
+    expect(rupees(1.999), '₹1.99', reason: 'rounding never shows .100');
   });
 }

@@ -109,6 +109,15 @@ void main() {
     });
   });
 
+  group('Guest purchases', () {
+    testWidgets('guest with a payment under check sees the status card', (t) async {
+      final api = FakeApi(guest: true, status: statusJson(guest: true))
+        ..pendingOrderValue = {'id': 'o9', 'reference': 'SK20261112REVIEW01', 'status': 'review'};
+      await pumpApp(t, api, const PremiumScreen());
+      expect(find.text('Payment SK20261112REVIEW01 is being checked'), findsOneWidget);
+    });
+  });
+
   group('Avatar letter', () {
     test('never fails on empty names or emails', () {
       expect(avatarInitial(null, null), 'G');
