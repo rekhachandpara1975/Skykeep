@@ -10,6 +10,16 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [info, setInfo] = useState<string | null>(null);
+
+  async function forgot() {
+    if (!email.includes('@')) { setErr('Type your email above first, then tap "Forgot password?".'); return; }
+    setBusy(true); setErr(null); setInfo(null);
+    const { error } = await supabaseBrowser().auth.resetPasswordForEmail(email, { redirectTo: `${window.location.origin}/admin/reset` });
+    setBusy(false);
+    if (error) setErr(error.message);
+    else setInfo('Password reset link sent. Open it in this browser to set a new password.');
+  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -30,12 +40,14 @@ export default function Login() {
           <span className="grid h-9 w-9 place-items-center rounded-lg bg-accent font-bold text-white">{SHORT_CODE}</span>
           <span className="text-lg font-semibold">{APP_NAME} admin</span>
         </div>
+        {info && <p role="status" className="rounded bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{info}</p>}
         {err && <p role="alert" className="error-alert rounded bg-red-50 px-3 py-2 text-sm text-red-700">{err}</p>}
         <div><label className="label" htmlFor="email">Email</label>
           <input id="email" className="input" type="email" autoComplete="username" required value={email} onChange={(e) => setEmail(e.target.value)} /></div>
         <div><label className="label" htmlFor="password">Password</label>
           <input id="password" className="input" type="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} /></div>
-        <button className="btn-primary w-full" disabled={busy}>{busy ? 'Signing in…' : 'Sign in'}</button>
+        <button className="btn-primary w-full" disabled={busy}>{busy ? 'Please wait…' : 'Sign in'}</button>
+        <button type="button" onClick={forgot} disabled={busy} className="w-full text-sm text-accent underline">Forgot password?</button>
         <p className="text-xs text-muted">Admins only. Ask the owner for an invite.</p>
       </form>
     </main>
