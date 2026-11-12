@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { supabasePublic } from '@/lib/supabase/server';
-import { rupees, durationLabel } from '@/lib/format';
+import { rupees, planLength } from '@/lib/format';
 import { APP_NAME } from '@/lib/site';
 import { BuyButton } from './buy-button';
 
@@ -16,7 +16,7 @@ export default async function Subscribe({ searchParams }: { searchParams: Promis
   const paused = sp.paused === '1';
   const sb = supabasePublic();
   const [{ data: plans = [] }, { data: offers }] = await Promise.all([
-    sb.from('plans').select('id,name,price_inr,duration_days,perks,badge').eq('active', true).order('position'),
+    sb.from('plans').select('id,name,price_inr,duration_days,duration_hours,perks,badge').eq('active', true).order('position'),
     sb.rpc('plan_offers'),
   ]);
   const payee: string | null = offers?.payee_name ?? null;
@@ -36,7 +36,7 @@ export default async function Subscribe({ searchParams }: { searchParams: Promis
                 {free ? <span className="badge bg-emerald-400/20 text-emerald-300">FREE</span> : p.badge && <span className="badge bg-amber-400/20 text-amber-300">{p.badge}</span>}
               </div>
               <p className="mt-1"><span className={`text-2xl font-bold ${free ? 'text-slate-500 line-through' : ''}`}>{rupees(p.price_inr)}</span>
-                <span className="ml-2 text-sm text-slate-400">{durationLabel(p.duration_days).slice(2)}</span></p>
+                <span className="ml-2 text-sm text-slate-400">{planLength(p)}</span></p>
               <ul className="mt-2 space-y-1 text-sm text-slate-300">{p.perks.map((x: string) => <li key={x}>✓ {x}</li>)}</ul>
               <BuyButton planId={p.id} label={free ? 'Activate for free' : `Pay ${rupees(p.price_inr)} with UPI`} disabled={paused && !free} price={p.price_inr} />
               {!free && payee && <p className="mt-2 text-center text-xs text-slate-400">You will pay {rupees(p.price_inr)} to <b className="text-slate-200">{payee}</b> from your UPI app.</p>}

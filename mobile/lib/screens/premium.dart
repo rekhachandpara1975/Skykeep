@@ -131,7 +131,7 @@ class ActivePlanCard extends StatelessWidget {
         child: Row(children: [
           const Icon(Icons.workspace_premium, color: C.gold, size: 36),
           const SizedBox(width: 12),
-          Expanded(child: Text('${status.planName ?? 'Premium'} active until ${formatDate(status.planEndsAt)}',
+          Expanded(child: Text('${status.planName ?? 'Premium'} active until ${formatPlanEnd(status.planEndsAt)}',
               style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.white))),
         ]),
       );
@@ -206,7 +206,7 @@ class PremiumWeb extends StatelessWidget {
         MaterialBanner(
           backgroundColor: C.surface2,
           leading: const Icon(Icons.workspace_premium, color: C.gold),
-          content: Text('${status.planName ?? 'Premium'} active until ${formatDate(status.planEndsAt)}'),
+          content: Text('${status.planName ?? 'Premium'} active until ${formatPlanEnd(status.planEndsAt)}'),
           actions: [TextButton(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PaymentHistoryScreen())), child: const Text('History'))],
         )
       else if (app.pendingOrder != null)

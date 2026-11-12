@@ -26,7 +26,7 @@ Future<void> startPurchase(BuildContext context, BuyMessage msg) async {
     try {
       final r = await app.api.claimFreePlan(msg.planId);
       await app.refresh();
-      if (context.mounted) toast(context, 'Plan activated until ${formatDate(DateTime.tryParse(r['ends_at'].toString())?.toLocal())}');
+      if (context.mounted) toast(context, 'Plan activated until ${formatPlanEnd(DateTime.tryParse(r['ends_at'].toString())?.toLocal())}');
     } catch (e) {
       if (context.mounted) toast(context, friendlyError(e));
     }
