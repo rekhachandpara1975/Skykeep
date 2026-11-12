@@ -12,6 +12,8 @@ void main() {
     expect(find.text('Category (optional)'), findsOneWidget);
     expect(find.text('Tags (optional, comma separated)'), findsOneWidget);
 
+    await t.ensureVisible(find.text('Create channel').last);
+    await t.pumpAndSettle();
     await t.tap(find.text('Create channel').last);
     await t.pump();
     expect(find.text('Enter a channel name (at least 2 characters)'), findsOneWidget);
