@@ -51,6 +51,7 @@ jobs:
   build:
     needs: test
     runs-on: ubuntu-latest
+    permissions: { contents: write } # publish the "latest" release with the APK/AAB
     defaults: { run: { working-directory: mobile } }
     env:
       DEFINES: --dart-define=SUPABASE_URL=${{ secrets.SUPABASE_URL }} --dart-define=SUPABASE_PUBLISHABLE_KEY=${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
