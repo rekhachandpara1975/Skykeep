@@ -33,5 +33,8 @@ enabled = true
 [functions.deletion-request]
 verify_jwt = false
 
+[functions.bank-sms]
+verify_jwt = false
+
 [functions.upi-webhook]
 verify_jwt = false

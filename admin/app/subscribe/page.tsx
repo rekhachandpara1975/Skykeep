@@ -45,7 +45,7 @@ export default async function Subscribe({ searchParams }: { searchParams: Promis
         })}
         {!plans?.length && <p className="text-center text-slate-400">No plans available right now.</p>}
       </div>
-      <p className="mx-auto mt-6 max-w-md text-center text-xs text-slate-400">UPI only — no cards or wallets. After paying, your plan turns on once we verify the payment with the bank (usually within a few hours).</p>
+      <p className="mx-auto mt-6 max-w-md text-center text-xs text-slate-400">UPI only — no cards or wallets. After paying, your plan turns on as soon as the payment is confirmed with the bank (usually within minutes).</p>
       {sp.app !== '1' && <p className="mt-6 text-center text-sm text-slate-400">Open this page from the {APP_NAME} app to buy.</p>}
     </main>
   );

@@ -25,13 +25,15 @@ export default async function Payments({ searchParams }: { searchParams: Promise
   await requireAdmin(true);
   const f = (await searchParams).f ?? 'review';
   const sb = await supabaseServer();
-  const [{ data: ps }, { data: orders = [] }, { data: sales }, { data: audit = [] }, { data: stats }] = await Promise.all([
+  const [{ data: ps }, { data: orders = [] }, { data: sales }, { data: audit = [] }, { data: stats }, { data: credits = [] }] = await Promise.all([
     sb.from('payment_settings').select('*').single(),
     sb.rpc('admin_orders', { p_filter: f, p_limit: 300 }),
     sb.rpc('admin_sales'),
     sb.from('settings_audit').select('*').order('changed_at', { ascending: false }).limit(50),
     sb.rpc('admin_stats'),
+    sb.rpc('admin_bank_credits', { p_limit: 20 }),
   ]);
+  const smsUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/bank-sms`;
   const live = !!(ps?.enabled && ps?.upi_id && ps?.payee_name);
   const list = (orders ?? []) as Order[];
   const [{ data: events = [] }, shots] = await Promise.all([
@@ -80,6 +82,33 @@ export default async function Payments({ searchParams }: { searchParams: Promise
           </form>
         </section>
       </div>
+
+      <section className="card mb-6 overflow-x-auto">
+        <div className="mb-2 flex items-center justify-between">
+          <h2 className="h2 mb-0">Bank SMS auto-verify</h2>
+          <span className={`badge ${credits?.length ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
+            {credits?.length ? `Last SMS ${dateTime(credits[0].received_at)}` : 'No bank SMS received yet'}</span>
+        </div>
+        <p className="mb-2 text-sm text-muted">
+          When your bank texts a UPI credit, an SMS-forwarder app on that phone sends it here. A plan turns on automatically only when the
+          bank&apos;s amount and UTR match an order (or the amount matches exactly one open order). Anything unclear stays under <b>To verify</b>.
+        </p>
+        <p className="mb-3 break-all rounded bg-slate-50 p-2 font-mono text-xs">{smsUrl}?key=YOUR_BANK_SMS_KEY</p>
+        <table className="table">
+          <thead><tr><th>Received</th><th>Amount</th><th>UTR</th><th>Matched order</th><th>Result</th></tr></thead>
+          <tbody>
+            {(credits ?? []).map((c: { id: number; received_at: string; amount_paise: number; utr: string | null; reference: string | null; order_status: string | null; note: string | null }) => (
+              <tr key={c.id}>
+                <td className="whitespace-nowrap text-xs">{dateTime(c.received_at)}</td>
+                <td className="whitespace-nowrap">{paise(c.amount_paise)}</td>
+                <td className="font-mono text-xs">{c.utr ?? '—'}</td>
+                <td className="font-mono text-xs">{c.reference ?? '—'}{c.order_status && <span className={`badge ml-1 ${STATUS_COLOR[c.order_status] ?? ''}`}>{c.order_status}</span>}</td>
+                <td className="text-xs">{c.note}</td>
+              </tr>))}
+            {!credits?.length && <tr><td colSpan={5} className="text-muted">Nothing yet. Set it up with docs/payments.md › Automatic verification.</td></tr>}
+          </tbody>
+        </table>
+      </section>
 
       <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[['Revenue today', rupees(stats?.revenue_today)], ['Revenue this month', rupees(stats?.revenue_month)],

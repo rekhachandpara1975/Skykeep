@@ -47,6 +47,39 @@ Status names: **pending** = waiting for payment, **review** (or `submitted`) = v
 
 Google Play: the Play Store build never shows this checkout and has no Google Play Billing; it is free tier only (`play-store.md`).
 
+## Automatic verification (bank SMS)
+Plans activate **automatically within seconds** when your bank's own credit SMS confirms the payment. The phone's
+"SUCCESS" is never trusted on its own.
+
+How it matches (server side, `bank_credit_received` → `match_credit`):
+1. **UTR match:** the bank SMS's UTR equals the order's UTR (sent by the buyer's UPI app, or typed by the buyer under
+   "I have paid") and the amount is exactly the order amount → **paid**.
+2. **Amount match:** no order has that UTR, and **exactly one** open order (created in the 2 hours before the credit)
+   has that exact amount → **paid**. If two or more do, it waits for the buyer's UTR or for you.
+3. **Wrong amount** → the order goes to **To verify** with a note. Never automatic.
+4. **SMS arrives first** (the buyer hasn't typed the UTR yet) → it is stored, and the plan activates the moment the
+   buyer's UTR arrives.
+
+The same SMS twice does nothing, and a UTR can be used for only one order. Admin › Payments › **Bank SMS auto-verify**
+shows every credit received and what it matched.
+
+### Set it up (once)
+1. **Choose a secret key**: any long random text, e.g. 30+ letters and numbers. Add it in Supabase › Edge Functions ›
+   Secrets as `BANK_SMS_KEY`. Optionally also add `BANK_SMS_SENDERS`, part of your bank's SMS sender name, e.g.
+   `BANDHN`, so other senders are ignored.
+2. On the Android phone that has the **SIM registered with your bank account**, install an **SMS-forwarder** app
+   that can send SMS to a webhook URL (several free ones are on the Play Store; look for "SMS to URL" or
+   "SMS forwarder webhook").
+3. In that app, add a rule:
+   - **Sender contains:** your bank's sender ID (e.g. `BANDHN`).
+   - **Webhook URL:** `https://vzeehoissxdutmxdezjf.supabase.co/functions/v1/bank-sms?key=YOUR_BANK_SMS_KEY`
+   - **Method:** POST. **Body:** the SMS text (JSON `{"text":"%text%","from":"%from%"}` or the app's default).
+4. Turn off battery optimisation for that app, so Android doesn't stop it.
+5. Test: pay ₹1 to your own UPI ID from another app. Admin › Payments › Bank SMS auto-verify should show the credit
+   within seconds.
+
+If the phone is off or the app is stopped, nothing breaks: orders simply wait under **To verify** as before.
+
 ## Daily bank check (5 minutes)
 1. Admin › Payments › filter **Activated today — verify against bank**.
 2. Open your bank app/statement. For each row, find a credit with the same amount and the UTR / transaction id shown.

@@ -298,7 +298,7 @@ class PaymentStatusView extends StatelessWidget {
     final (IconData icon, Color color, String text, String? sub) = switch (status) {
       'paid' => (Icons.check_circle, C.success, 'Payment successful! Your plan is now active.', null),
       'review' => (Icons.verified_user_outlined, C.primary, 'Payment received, being verified',
-          'We check every payment against the bank. This usually takes a few hours.'),
+          'We confirm every payment with the bank — usually within minutes.'),
       'expired' => (Icons.timer_off_outlined, C.warning, 'This order expired',
           'Orders stay open for 30 minutes. Start again — or if you already paid, tap "I have paid".'),
       'failed' || 'cancelled' => (Icons.error, C.danger, 'Payment failed or cancelled', 'No money was taken? Try again. Money was taken? Tap "I have paid".'),
