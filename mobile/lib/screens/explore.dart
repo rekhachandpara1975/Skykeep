@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../app_state.dart';
-import '../config.dart';
 import '../services/api.dart';
 import '../services/status.dart';
 import '../theme.dart';
@@ -10,7 +9,7 @@ import 'channels.dart' show ChannelIcon, ChannelPage;
 import 'home.dart';
 import 'login_sheet.dart';
 import 'post.dart';
-import 'premium.dart';
+import 'profile.dart' show ProfileButton;
 
 /// Fixed browsing categories (guide §04). "More" lists every category the server knows.
 const exploreCategories = ['All', 'Entertainment', 'Music', 'Learning', 'Technology', 'Education', 'Lifestyle', 'More'];
@@ -88,7 +87,6 @@ class _ExploreScreenState extends State<ExploreScreen> {
     final app = AppScope.of(context);
     final s = app.status;
     final guest = app.api.isGuest;
-    final showCrown = s.plansVisible && !s.hasPlan && !s.freeMode && !Config.playStore;
     final name = (s.displayName ?? app.api.user?.email?.split('@').first ?? '').trim();
     final greeting = switch (DateTime.now().hour) { < 12 => 'Good morning', < 17 => 'Good afternoon', _ => 'Good evening' };
 
@@ -152,10 +150,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
         title: const Logo(size: 30, wordmark: true),
         actions: [
           IconButton(tooltip: 'Search', icon: const Icon(Icons.search), onPressed: () => openSearch(context)),
-          if (showCrown)
-            IconButton(tooltip: 'Premium', icon: const Icon(Icons.workspace_premium, color: C.gold),
-                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PremiumScreen()))),
-          const SizedBox(width: 4),
+          const ProfileButton(),
         ],
       ),
       body: RefreshIndicator(

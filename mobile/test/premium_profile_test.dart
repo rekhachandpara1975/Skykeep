@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:skykeep/screens/premium.dart';
+import 'package:skykeep/screens/plans.dart';
 import 'package:skykeep/screens/profile.dart';
 
 import 'fakes.dart';
-import 'flutter_test_config.dart';
 
 void main() {
   group('Premium', () {
@@ -39,44 +39,52 @@ void main() {
       expect(find.text('Payment history'), findsOneWidget);
     });
 
-    testWidgets('plans visible: website plans page with free / paused params', (t) async {
+    testWidgets('plans visible: native plan picker, free plan and paused payments', (t) async {
       await pumpApp(t, FakeApi(status: statusJson(paymentsAvailable: false), freePlanIds: const [planMonthly]), const PremiumScreen());
       expect(find.text('Go Premium'), findsOneWidget);
-      expect(find.byKey(const Key('fake-web')), findsNothing, reason: 'plans page opens from "View plans"');
-      await t.tap(find.text('View plans'));
-      await t.pumpAndSettle();
-      expect(find.byKey(const Key('fake-web')), findsOneWidget);
-      expect(FakePremiumWeb.lastUrl!.queryParameters, {'app': '1', 'free': planMonthly, 'paused': '1'});
+      expect(find.text('Choose your plan'), findsOneWidget);
+      expect(find.text('Monthly'), findsOneWidget);
+      expect(find.text('FREE'), findsOneWidget);
+      expect(find.text('₹799'), findsOneWidget);
+      expect(find.text('1 Year · ₹2.2 / day'), findsOneWidget);
+      expect(find.text('Get Yearly · ₹799'), findsOneWidget);
+      expect(find.text('Payments are paused right now. Please try again later.'), findsOneWidget);
+      await t.tap(find.text('Monthly'));
+      await t.pump();
+      expect(find.text('Get Monthly · Free'), findsOneWidget);
+      expect(find.byKey(const Key('fake-web')), findsNothing);
     });
 
-    testWidgets('subscriber sees active-plan banner above the page', (t) async {
+    testWidgets('subscriber sees the plan, not the picker', (t) async {
       await pumpApp(t, FakeApi(status: statusJson(hasPlan: true, premium: true)), const PremiumScreen());
       expect(find.text('Yearly active until 9 Nov 2027'), findsOneWidget);
-      await t.tap(find.text('View plans'));
-      await t.pumpAndSettle();
-      expect(find.byKey(const Key('fake-web')), findsOneWidget);
-      expect(find.text('Yearly active until 9 Nov 2027'), findsOneWidget, reason: 'banner above the plans page');
+      expect(find.text('Choose your plan'), findsNothing);
+      expect(find.text('Payment history'), findsOneWidget);
     });
   });
 
   group('Profile', () {
-    testWidgets('guest: log in button, plans first when visible', (t) async {
+    testWidgets('guest: link your email, Go Premium, My cloud, log in', (t) async {
       await pumpApp(t, FakeApi(guest: true, status: statusJson(guest: true)), const ProfileScreen());
+      expect(find.text('Link your email'), findsOneWidget);
       expect(find.text('Go Premium'), findsOneWidget);
+      expect(find.text('My cloud'), findsOneWidget);
       expect(find.text('Log in or create account'), findsOneWidget);
+      expect(find.text('My Channels'), findsOneWidget);
+      expect(find.text('Add Channel'), findsOneWidget);
     });
 
-    testWidgets('member without plan, plans visible: Premium first', (t) async {
+    testWidgets('member without plan: Go Premium tile, no link-email banner', (t) async {
       await pumpApp(t, FakeApi(status: statusJson()), const ProfileScreen());
-      final premium = t.getTopLeft(find.text('Go Premium')).dy;
-      final account = t.getTopLeft(find.text('Asha')).dy;
-      expect(premium, lessThan(account));
+      expect(find.text('Go Premium'), findsOneWidget);
+      expect(find.text('Link your email'), findsNothing);
       expect(find.text('Free account'), findsOneWidget);
     });
 
-    testWidgets('subscriber: plan line, no Premium tile', (t) async {
+    testWidgets('subscriber: My plan tile and plan line', (t) async {
       await pumpApp(t, FakeApi(status: statusJson(hasPlan: true, premium: true, quota: 2199023255552)), const ProfileScreen());
       expect(find.text('Go Premium'), findsNothing);
+      expect(find.text('My plan'), findsOneWidget);
       expect(find.text('Yearly active until 9 Nov 2027'), findsOneWidget);
       expect(find.text('Payment history'), findsOneWidget);
     });
@@ -91,6 +99,25 @@ void main() {
       await pumpApp(t, FakeApi(status: statusJson(freeMode: true, plansVisible: false, premium: true, quota: 16106127360)), const ProfileScreen());
       expect(find.text('Go Premium'), findsNothing);
       expect(find.text('Full access'), findsWidgets);
+    });
+
+    testWidgets('settings: policy buttons, logout, delete account', (t) async {
+      await pumpApp(t, FakeApi(status: statusJson()), const SettingsScreen());
+      for (final x in ['Privacy Policy', 'Terms & Conditions', 'Community Guidelines', 'Refund Policy', 'Logout', 'Delete Account']) {
+        expect(find.text(x), findsOneWidget, reason: x);
+      }
+    });
+  });
+
+  group('Plan labels', () {
+    test('durations and unit prices', () {
+      expect(planDuration({'duration_days': 2}), '2 Days');
+      expect(planDuration({'duration_days': 30}), '1 Month');
+      expect(planDuration({'duration_days': 180}), '6 Months');
+      expect(planDuration({'duration_days': 365}), '1 Year');
+      expect(planDuration({'duration_days': 1, 'duration_hours': 6}), '6 Hours');
+      expect(planUnitPrice({'price_inr': 99, 'duration_days': 2}), '₹49.5 / day');
+      expect(planUnitPrice({'price_inr': 30, 'duration_days': 1, 'duration_hours': 3}), '₹10 / hour');
     });
   });
 }

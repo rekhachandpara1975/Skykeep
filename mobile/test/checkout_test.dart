@@ -38,6 +38,17 @@ void main() {
     expect(api.reported.single, contains('Status=SUCCESS'));
   });
 
+  testWidgets('guest can pay without logging in', (t) async {
+    final api = FakeApi(guest: true, status: statusJson(guest: true))..orderStatusValue = 'paid';
+    final upi = FakeUpi(const UpiLaunch(response: 'Status=SUCCESS'));
+    await pumpApp(t, api, const _Buy(planYearly, 799), upi: upi);
+    await t.tap(find.text('buy'));
+    await t.pumpAndSettle();
+    expect(find.text('Create account'), findsNothing, reason: 'no login sheet');
+    expect(upi.lastUri, contains('am=799.00'));
+    expect(find.text('Payment successful! Your plan is now active.'), findsOneWidget);
+  });
+
   testWidgets('successful payment shows the success screen', (t) async {
     final api = FakeApi()..orderStatusValue = 'paid';
     await pumpApp(t, api, const _Buy(planYearly, 799), upi: FakeUpi(const UpiLaunch(response: 'Status=SUCCESS')));

@@ -10,6 +10,7 @@ import '../widgets/common.dart';
 import 'channels.dart' show ChannelIcon, ChannelPage;
 import 'explore.dart' show MediaThumb, openSearch;
 import 'login_sheet.dart';
+import 'profile.dart' show ProfileButton;
 import 'post.dart';
 
 /// Feed tab: Following (joined channels) / For You (latest from everyone the server lets you see).
@@ -88,6 +89,7 @@ class _FeedScreenState extends State<FeedScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Feed'), actions: [
         IconButton(tooltip: 'Search', icon: const Icon(Icons.search), onPressed: () => openSearch(context)),
+        const ProfileButton(),
       ]),
       body: Column(children: [
         Padding(

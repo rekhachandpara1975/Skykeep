@@ -9,6 +9,7 @@ import 'app_state.dart';
 import 'config.dart';
 import 'screens/home.dart';
 import 'screens/login_sheet.dart';
+import 'screens/welcome.dart';
 import 'services/api.dart';
 import 'theme.dart';
 
@@ -68,7 +69,7 @@ class _SkyKeepAppState extends State<SkyKeepApp> {
         title: Config.appName,
         debugShowCheckedModeBanner: false,
         theme: buildTheme(googleFonts: widget.googleFonts),
-        home: widget.home ?? const HomeShell(),
+        home: widget.home ?? const WelcomeGate(child: HomeShell()),
       ),
     );
   }

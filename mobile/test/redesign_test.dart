@@ -15,9 +15,10 @@ final _posts = [
 ];
 
 void main() {
-  testWidgets('five tabs: Explore, Feed, Channels, Cloud, Profile', (t) async {
+  testWidgets('five tabs: Explore, Feed, Channels, Cloud, Premium; profile from the avatar', (t) async {
     await pumpApp(t, FakeApi(posts: _posts), const HomeShell());
-    for (final l in ['Explore', 'Feed', 'Channels', 'Cloud', 'Profile']) {
+    expect(find.byTooltip('Profile'), findsWidgets);
+    for (final l in ['Explore', 'Feed', 'Channels', 'Cloud', 'Premium']) {
       expect(find.descendant(of: find.byType(NavigationBar), matching: find.text(l)), findsOneWidget, reason: l);
     }
     await t.tap(find.descendant(of: find.byType(NavigationBar), matching: find.text('Feed')));

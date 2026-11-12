@@ -16,13 +16,14 @@ import 'login_sheet.dart';
 /// {type:"buy"} from the plans page → free claim or UPI checkout.
 Future<void> startPurchase(BuildContext context, BuyMessage msg) async {
   final app = AppScope.read(context);
-  if (!await requireMember(context, reason: 'Log in to continue with your plan')) return;
-  if (!context.mounted) return;
   final plan = await app.findPlan(msg.planId);
   if (!context.mounted) return;
   if (plan == null) return toast(context, 'This plan is no longer available.');
 
+  // Guests can pay (the plan stays when they add an email later); free plans need an account.
   if (app.status.freePlanIds.contains(msg.planId)) {
+    if (!await requireMember(context, reason: 'Log in to claim your free plan')) return;
+    if (!context.mounted) return;
     try {
       final r = await app.api.claimFreePlan(msg.planId);
       await app.refresh();

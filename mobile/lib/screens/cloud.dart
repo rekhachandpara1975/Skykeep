@@ -10,6 +10,7 @@ import '../theme.dart';
 import '../widgets/common.dart';
 import 'channels.dart' show askText, mimeFor;
 import 'login_sheet.dart';
+import 'profile.dart' show ProfileButton;
 import 'premium.dart';
 
 class CloudScreen extends StatefulWidget {
@@ -122,6 +123,7 @@ class _CloudScreenState extends State<CloudScreen> {
               await app.api.createFolder(n, _folderId);
               _load();
             }),
+          if (_path.isEmpty) const ProfileButton(),
         ],
       ),
       floatingActionButton: canUpload

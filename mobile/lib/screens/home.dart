@@ -5,9 +5,9 @@ import 'channels.dart';
 import 'cloud.dart';
 import 'explore.dart';
 import 'feed.dart';
-import 'profile.dart';
+import 'premium.dart';
 
-/// Bottom navigation: Explore · Feed · Channels · Cloud · Profile.
+/// Bottom navigation: Explore · Feed · Channels · Cloud · Premium. Profile opens from the avatar at the top right.
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key, this.initialTab = 0});
   final int initialTab;
@@ -20,8 +20,23 @@ class HomeShell extends StatefulWidget {
 
 class HomeShellState extends State<HomeShell> {
   late int _tab = widget.initialTab;
-  static const _pages = [ExploreScreen(), FeedScreen(), ChannelsScreen(), CloudScreen(), ProfileScreen()];
+  static const _pages = [ExploreScreen(), FeedScreen(), ChannelsScreen(), CloudScreen(), PremiumScreen()];
   static const cloudTab = 3;
+
+  /// The live shell, so pushed pages (Profile → "My cloud") can switch tabs.
+  static HomeShellState? current;
+
+  @override
+  void initState() {
+    super.initState();
+    current = this;
+  }
+
+  @override
+  void dispose() {
+    if (current == this) current = null;
+    super.dispose();
+  }
 
   void go(int tab) => setState(() => _tab = tab);
 
@@ -39,7 +54,7 @@ class HomeShellState extends State<HomeShell> {
               NavigationDestination(icon: Icon(Icons.dynamic_feed_outlined), selectedIcon: Icon(Icons.dynamic_feed), label: 'Feed'),
               NavigationDestination(icon: Icon(Icons.hub_outlined), selectedIcon: Icon(Icons.hub), label: 'Channels'),
               NavigationDestination(icon: Icon(Icons.cloud_outlined), selectedIcon: Icon(Icons.cloud), label: 'Cloud'),
-              NavigationDestination(icon: Icon(Icons.person_outline), selectedIcon: Icon(Icons.person), label: 'Profile'),
+              NavigationDestination(icon: Icon(Icons.workspace_premium_outlined), selectedIcon: Icon(Icons.workspace_premium), label: 'Premium'),
             ],
           ),
         ),

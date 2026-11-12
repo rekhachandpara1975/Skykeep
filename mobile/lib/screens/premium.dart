@@ -9,6 +9,8 @@ import '../theme.dart';
 import '../widgets/common.dart';
 import 'checkout.dart';
 import 'login_sheet.dart';
+import 'plans.dart';
+import 'profile.dart' show ProfileButton;
 
 /// Builds the plans WebView. Tests replace it (see test/flutter_test_config.dart).
 typedef PremiumWebBuilder = Widget Function(Uri url, void Function(String message) onMessage);
@@ -26,10 +28,20 @@ class PremiumScreen extends StatelessWidget {
     final body = switch (mode) {
       PremiumMode.freeAccount => FreeAccountCard(status: s, isGuest: app.api.isGuest),
       PremiumMode.hidden => HiddenPlansView(status: s),
-      PremiumMode.web => PremiumLanding(status: s),
+      PremiumMode.web => s.hasPlan ? HiddenPlansView(status: s) : const PlanPicker(),
     };
     if (embedded) return body;
-    return Scaffold(appBar: AppBar(title: const Text('Premium')), body: body);
+    return Scaffold(
+      appBar: AppBar(
+        title: Row(mainAxisSize: MainAxisSize.min, children: [
+          const Icon(Icons.workspace_premium, color: C.gold),
+          const SizedBox(width: 8),
+          Text(mode == PremiumMode.web && !s.hasPlan ? 'Go Premium' : 'Premium'),
+        ]),
+        actions: const [ProfileButton()],
+      ),
+      body: body,
+    );
   }
 }
 
