@@ -60,7 +60,8 @@ class AppController extends ChangeNotifier with WidgetsBindingObserver {
       final r = await Future.wait([api.myStatus(), api.planOffers(), api.activePlans()]);
       status = AppStatus.fromServer(r[0] as Json, r[1] as Json);
       plans = r[2] as List<Json>;
-      pendingOrder = status.isGuest ? null : await api.latestPendingOrder();
+      // guests can buy too, so everyone with a session gets their pending-payment card
+      pendingOrder = await api.latestPendingOrder();
       notifyListeners();
     } catch (e) {
       debugPrint('status refresh failed: $e');

@@ -222,7 +222,7 @@ class _PaymentProofSheetState extends State<PaymentProofSheet> {
 
 String _friendlyProofError(String e) => switch (e) {
       'this UTR was already used for another payment' => 'This UTR was already used for another payment. Check the number.',
-      _ => e[0].toUpperCase() + e.substring(1),
+      _ => e.isEmpty ? 'Something went wrong. Please try again.' : e[0].toUpperCase() + e.substring(1),
     };
 
 class PaymentStatusScreen extends StatefulWidget {

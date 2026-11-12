@@ -109,6 +109,32 @@ void main() {
     });
   });
 
+  group('Guest purchases', () {
+    testWidgets('guest with a payment under check sees the status card', (t) async {
+      final api = FakeApi(guest: true, status: statusJson(guest: true))
+        ..pendingOrderValue = {'id': 'o9', 'reference': 'SK20261112REVIEW01', 'status': 'review'};
+      await pumpApp(t, api, const PremiumScreen());
+      expect(find.text('Payment SK20261112REVIEW01 is being checked'), findsOneWidget);
+    });
+  });
+
+  group('Avatar letter', () {
+    test('never fails on empty names or emails', () {
+      expect(avatarInitial(null, null), 'G');
+      expect(avatarInitial('', ''), 'G');
+      expect(avatarInitial('  ', ''), 'G');
+      expect(avatarInitial('', 'asha@x.in'), 'A');
+      expect(avatarInitial('ravi', null), 'R');
+    });
+
+    testWidgets('profile still draws when the name is empty', (t) async {
+      final st = statusJson()..['display_name'] = '';
+      await pumpApp(t, FakeApi(status: st), const ProfileScreen());
+      expect(find.text('My cloud'), findsOneWidget);
+      expect(find.text('Your account'), findsOneWidget);
+    });
+  });
+
   group('Plan labels', () {
     test('durations and unit prices', () {
       expect(planDuration({'duration_days': 2}), '2 Days');

@@ -62,8 +62,9 @@ class FakeApi extends Api {
       {'free_plan_ids': freePlanIds, 'payments_available': status['payments_available'], 'plans_visible': status['plans_visible']};
   @override
   Future<List<Json>> activePlans() async => plansList;
+  Json? pendingOrderValue;
   @override
-  Future<Json?> latestPendingOrder() async => null;
+  Future<Json?> latestPendingOrder() async => pendingOrderValue;
   @override
   Future<Json> createOrder(String planId) async => order ??
       {'order_id': 'o1', 'reference': 'SK20261109ABCDEF12', 'amount_inr': 799, 'upi_id': 'shop@okaxis', 'payee_name': 'SkyKeep Shop'};
