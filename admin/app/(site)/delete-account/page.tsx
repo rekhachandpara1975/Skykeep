@@ -8,7 +8,7 @@ export default function DeleteAccount() {
     <main className="mx-auto max-w-3xl space-y-4 px-4 text-slate-300">
       <h1 className="text-3xl font-bold text-white">Delete your {APP_NAME} account</h1>
       <h2 className="text-xl font-semibold text-white">In the app (fastest)</h2>
-      <p>Open {APP_NAME} › Profile › Settings › <b>Delete account</b> and confirm. Your account and files are removed immediately.</p>
+      <p>Open {APP_NAME}, tap the profile icon (top right) › Settings (gear) › <b>Delete Account</b> and confirm. Your account and files are removed immediately.</p>
       <h2 className="text-xl font-semibold text-white">Request by email</h2>
       <p>Can&apos;t open the app? Send this form. We reply within 7 days.</p>
       <DeletionForm />
