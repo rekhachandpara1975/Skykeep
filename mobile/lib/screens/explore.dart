@@ -91,7 +91,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
     final greeting = switch (DateTime.now().hour) { < 12 => 'Good morning', < 17 => 'Good afternoon', _ => 'Good evening' };
 
     final header = <Widget>[
-      Text(guest || name.isEmpty ? '$greeting 👋' : '$greeting, $name 👋',
+      Text(guest || name.isEmpty ? greeting : '$greeting, $name',
           style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: C.text)),
       const SizedBox(height: 4),
       const Text('Your files and channels, in one place.', style: TextStyle(color: C.muted)),
