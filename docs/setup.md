@@ -52,7 +52,7 @@ On every push to `main`, the `supabase-deploy` job runs `db push` and deploys al
    insert into public.admins (user_id, role, email)
    select id, 'owner', email from auth.users where email = 'YOUR_EMAIL';
    ```
-3. Log in at `https://skykeep.vercel.app/admin/login`. Invite other admins from the **Admins** page.
+3. Log in at `https://skykeep.vercel.app/control-7x2k/login`. Invite other admins from the **Admins** page.
 
 ## 5. Turn on payments
 Admin › Payments › enter your UPI ID and payee name (exactly as your bank shows it) › Save. Then Admin › Plans › add plans. Until a UPI ID is set, payments stay off everywhere.

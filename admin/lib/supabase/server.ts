@@ -34,9 +34,9 @@ export type AdminCtx = { userId: string; email: string; role: 'owner' | 'content
 export async function requireAdmin(ownerOnly = false): Promise<AdminCtx> {
   const sb = await supabaseServer();
   const { data: { user } } = await sb.auth.getUser();
-  if (!user || user.is_anonymous) redirect('/admin/login');
+  if (!user || user.is_anonymous) redirect('/control-7x2k/login');
   const { data: row } = await sb.from('admins').select('role').eq('user_id', user.id).maybeSingle();
-  if (!row) redirect('/admin/login?error=not_admin');
-  if (ownerOnly && row.role !== 'owner') redirect('/admin');
+  if (!row) redirect('/control-7x2k/login?error=not_admin');
+  if (ownerOnly && row.role !== 'owner') redirect('/control-7x2k');
   return { userId: user.id, email: user.email ?? '', role: row.role };
 }
