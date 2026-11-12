@@ -74,26 +74,48 @@ class _LoginSheetState extends State<LoginSheet> {
     }
   }
 
+  bool _show = false;
+
   @override
   Widget build(BuildContext context) {
     final api = AppScope.read(context).api;
     final valid = _email.text.contains('@') && (_password.text.length >= 8);
     return Padding(
-      padding: EdgeInsets.fromLTRB(20, 20, 20, 20 + MediaQuery.of(context).viewInsets.bottom),
+      padding: EdgeInsets.fromLTRB(20, 12, 20, 20 + MediaQuery.of(context).viewInsets.bottom),
       child: SingleChildScrollView(
         child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          Row(children: [const Logo(), const SizedBox(width: 12), Expanded(child: Text(widget.reason, style: Theme.of(context).textTheme.titleMedium))]),
+          Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: C.border, borderRadius: BorderRadius.circular(4)))),
+          const SizedBox(height: 16),
+          const Center(child: CloudMark(size: 56)),
           const SizedBox(height: 8),
-          Text(_signUp ? 'Create a free account. Everything you did as a guest stays.' : 'Welcome back.', style: const TextStyle(color: C.muted)),
+          Text(_signUp ? 'Create your account' : 'Welcome back', textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
+          const SizedBox(height: 4),
+          Text(widget.reason, textAlign: TextAlign.center, style: const TextStyle(color: C.muted)),
+          const SizedBox(height: 16),
+          PillTabs(labels: const ['Log in', 'Sign up'], index: _signUp ? 1 : 0,
+              onChanged: (i) => setState(() { _signUp = i == 1; _error = null; _info = null; })),
           const SizedBox(height: 16),
           TextField(controller: _email, keyboardType: TextInputType.emailAddress, autofillHints: const [AutofillHints.email],
-              decoration: const InputDecoration(labelText: 'Email'), onChanged: (_) => setState(() {})),
+              decoration: const InputDecoration(labelText: 'Email', hintText: 'you@example.com', prefixIcon: Icon(Icons.mail_outline)),
+              onChanged: (_) => setState(() {})),
           const SizedBox(height: 12),
-          TextField(controller: _password, obscureText: true,
+          TextField(controller: _password, obscureText: !_show,
               autofillHints: [_signUp ? AutofillHints.newPassword : AutofillHints.password],
-              decoration: const InputDecoration(labelText: 'Password (8+ characters)'), onChanged: (_) => setState(() {})),
-          if (_error != null) Padding(padding: const EdgeInsets.only(top: 12), child: Text(_error!, style: const TextStyle(color: C.danger))),
-          if (_info != null) Padding(padding: const EdgeInsets.only(top: 12), child: Text(_info!, style: const TextStyle(color: C.success))),
+              decoration: InputDecoration(labelText: 'Password (8+ characters)', prefixIcon: const Icon(Icons.lock_outline),
+                  suffixIcon: IconButton(tooltip: _show ? 'Hide password' : 'Show password',
+                      icon: Icon(_show ? Icons.visibility_off_outlined : Icons.visibility_outlined), onPressed: () => setState(() => _show = !_show))),
+              onChanged: (_) => setState(() {})),
+          if (!_signUp)
+            Align(alignment: Alignment.centerRight, child: TextButton(
+              onPressed: _busy || !_email.text.contains('@') ? null
+                  : () => _run(() => api.resetPassword(_email.text.trim()), info: 'Password reset link sent. Open it on this phone.'),
+              child: const Text('Forgot password?'),
+            )),
+          if (_signUp) const Padding(padding: EdgeInsets.only(top: 8),
+              child: Text('Everything you did as a guest stays with your new account.', style: TextStyle(color: C.muted, fontSize: 13))),
+          if (_error != null) Padding(padding: const EdgeInsets.only(top: 8), child: Text(_error!, style: const TextStyle(color: C.dangerText))),
+          if (_info != null) Padding(padding: const EdgeInsets.only(top: 8), child: Text(_info!, style: const TextStyle(color: C.successText))),
           const SizedBox(height: 16),
           GradientButton(
             label: _busy ? 'Please wait…' : (_signUp ? 'Create account' : 'Log in'),
@@ -101,14 +123,10 @@ class _LoginSheetState extends State<LoginSheet> {
                 ? _run(() => api.signUp(_email.text.trim(), _password.text), info: 'Check your email to confirm, then come back.')
                 : _run(() => api.signIn(_email.text.trim(), _password.text), close: true),
           ),
-          TextButton(onPressed: () => setState(() => _signUp = !_signUp),
-              child: Text(_signUp ? 'I already have an account' : 'Create a new account')),
-          if (!_signUp)
-            TextButton(
-              onPressed: _busy || !_email.text.contains('@') ? null
-                  : () => _run(() => api.resetPassword(_email.text.trim()), info: 'Password reset link sent. Open it on this phone.'),
-              child: const Text('Forgot password?'),
-            ),
+          const Padding(padding: EdgeInsets.symmetric(vertical: 10), child: Row(children: [
+            Expanded(child: Divider()), Padding(padding: EdgeInsets.symmetric(horizontal: 12), child: Text('or', style: TextStyle(color: C.muted))), Expanded(child: Divider()),
+          ])),
+          OutlinedButton(onPressed: () => Navigator.pop(context), child: const Text('Continue as guest')),
         ]),
       ),
     );

@@ -144,7 +144,7 @@ class _MediaItemState extends State<MediaItem> {
       if (kind == 'trailer')
         Padding(padding: const EdgeInsets.only(top: 8), child: Text(
             s.plansVisible && !Config.playStore ? 'Trailer · Get Premium to watch the full video' : 'Trailer · Full video for Premium members',
-            style: const TextStyle(color: C.gold))),
+            style: const TextStyle(color: C.goldText, fontWeight: FontWeight.w600))),
       if (kind == 'full' && widget.item['is_premium'] == true && s.isPremium)
         Align(alignment: Alignment.centerLeft,
             child: TextButton.icon(onPressed: _download, icon: const Icon(Icons.download), label: const Text('Download'))),

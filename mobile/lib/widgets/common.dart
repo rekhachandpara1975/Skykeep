@@ -5,17 +5,20 @@ import '../services/status.dart';
 import '../theme.dart';
 
 class Logo extends StatelessWidget {
-  const Logo({super.key, this.size = 32});
+  const Logo({super.key, this.size = 32, this.wordmark = false});
   final double size;
+  final bool wordmark;
   @override
   Widget build(BuildContext context) => Semantics(
         label: '${Config.appName} logo',
-        child: Container(
-          width: size, height: size,
-          decoration: BoxDecoration(gradient: C.gradient, borderRadius: BorderRadius.circular(size / 4)),
-          alignment: Alignment.center,
-          child: Text(Config.shortCode, style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: size * 0.4)),
-        ),
+        excludeSemantics: true,
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          CloudMark(size: size),
+          if (wordmark) ...[
+            const SizedBox(width: 6),
+            Text(Config.appName, style: TextStyle(fontSize: size * .62, fontWeight: FontWeight.w800, color: C.text, letterSpacing: -.3)),
+          ],
+        ]),
       );
 }
 
@@ -101,16 +104,33 @@ class StorageMeter extends StatelessWidget {
   }
 }
 
+/// Circular "8%" storage ring (Cloud tab).
+class StorageRing extends StatelessWidget {
+  const StorageRing({super.key, required this.used, required this.quota, this.size = 72});
+  final int used, quota;
+  final double size;
+  @override
+  Widget build(BuildContext context) {
+    final pct = quota == 0 ? 0.0 : (used / quota).clamp(0.0, 1.0);
+    final label = quota == 0 ? '0%' : pct > 0 && pct < .01 ? '<1%' : '${(pct * 100).round()}%';
+    return SizedBox(width: size, height: size, child: Stack(fit: StackFit.expand, children: [
+      CircularProgressIndicator(value: pct, strokeWidth: 7, backgroundColor: C.primarySoft, strokeCap: StrokeCap.round,
+          color: pct > .9 ? C.danger : C.primary),
+      Center(child: Text(label, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: C.text))),
+    ]));
+  }
+}
+
 class PremiumBadge extends StatelessWidget {
   const PremiumBadge({super.key});
   @override
   Widget build(BuildContext context) => Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-        decoration: BoxDecoration(color: C.gold.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(20)),
+        decoration: BoxDecoration(color: C.gold, borderRadius: BorderRadius.circular(20)),
         child: const Row(mainAxisSize: MainAxisSize.min, children: [
-          Icon(Icons.workspace_premium, color: C.gold, size: 14),
+          Icon(Icons.workspace_premium, color: C.navy, size: 14),
           SizedBox(width: 4),
-          Text('Premium', style: TextStyle(color: C.gold, fontSize: 12, fontWeight: FontWeight.w600)),
+          Text('Premium', style: TextStyle(color: C.navy, fontSize: 12, fontWeight: FontWeight.w700)),
         ]),
       );
 }

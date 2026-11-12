@@ -41,6 +41,10 @@ void main() {
 
     testWidgets('plans visible: website plans page with free / paused params', (t) async {
       await pumpApp(t, FakeApi(status: statusJson(paymentsAvailable: false), freePlanIds: const [planMonthly]), const PremiumScreen());
+      expect(find.text('Go Premium'), findsOneWidget);
+      expect(find.byKey(const Key('fake-web')), findsNothing, reason: 'plans page opens from "View plans"');
+      await t.tap(find.text('View plans'));
+      await t.pumpAndSettle();
       expect(find.byKey(const Key('fake-web')), findsOneWidget);
       expect(FakePremiumWeb.lastUrl!.queryParameters, {'app': '1', 'free': planMonthly, 'paused': '1'});
     });
@@ -48,7 +52,10 @@ void main() {
     testWidgets('subscriber sees active-plan banner above the page', (t) async {
       await pumpApp(t, FakeApi(status: statusJson(hasPlan: true, premium: true)), const PremiumScreen());
       expect(find.text('Yearly active until 9 Nov 2027'), findsOneWidget);
+      await t.tap(find.text('View plans'));
+      await t.pumpAndSettle();
       expect(find.byKey(const Key('fake-web')), findsOneWidget);
+      expect(find.text('Yearly active until 9 Nov 2027'), findsOneWidget, reason: 'banner above the plans page');
     });
   });
 

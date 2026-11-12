@@ -26,7 +26,7 @@ class PremiumScreen extends StatelessWidget {
     final body = switch (mode) {
       PremiumMode.freeAccount => FreeAccountCard(status: s, isGuest: app.api.isGuest),
       PremiumMode.hidden => HiddenPlansView(status: s),
-      PremiumMode.web => PremiumWeb(status: s),
+      PremiumMode.web => PremiumLanding(status: s),
     };
     if (embedded) return body;
     return Scaffold(appBar: AppBar(title: const Text('Premium')), body: body);
@@ -44,7 +44,17 @@ class FreeAccountCard extends StatelessWidget {
     final app = AppScope.read(context);
     return ListView(padding: const EdgeInsets.all(16), children: [
       Card(child: Padding(padding: const EdgeInsets.all(20), child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        const Row(children: [Logo(size: 40), SizedBox(width: 12), Expanded(child: Text('Free account', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600)))]),
+        Center(child: Container(width: 76, height: 76, decoration: const BoxDecoration(color: C.primarySoft, shape: BoxShape.circle),
+            alignment: Alignment.center, child: const CloudMark(size: 48))),
+        const SizedBox(height: 12),
+        const Text('Free account', textAlign: TextAlign.center, style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
+        const SizedBox(height: 4),
+        const Text('15 GB cloud storage', textAlign: TextAlign.center, style: TextStyle(color: C.muted)),
+        const SizedBox(height: 12),
+        for (final x in const ['Browse content', 'Join channels', 'Upload to your cloud'])
+          Padding(padding: const EdgeInsets.symmetric(vertical: 3), child: Row(children: [
+            const Icon(Icons.check_rounded, color: C.primary, size: 20), const SizedBox(width: 8), Expanded(child: Text(x)),
+          ])),
         const SizedBox(height: 16),
         if (isGuest) ...[
           const Text('Log in to get 15 GB free cloud storage.'),
@@ -81,7 +91,7 @@ class _AccessStatus extends StatelessWidget {
           Expanded(child: Text('Full access requested — waiting for approval'))]),
       'approved' => const Row(children: [Icon(Icons.verified, color: C.success), SizedBox(width: 8), Expanded(child: Text('Full access approved'))]),
       'rejected' => Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          const Text('Your request was not approved.', style: TextStyle(color: C.danger)),
+          const Text('Your request was not approved.', style: TextStyle(color: C.dangerText)),
           TextButton(onPressed: onRequest, child: const Text('Request again')),
         ]),
       _ => OutlinedButton(onPressed: onRequest, child: const Text('Request full access')),
@@ -115,12 +125,65 @@ class ActivePlanCard extends StatelessWidget {
   const ActivePlanCard({super.key, required this.status});
   final AppStatus status;
   @override
-  Widget build(BuildContext context) => Card(child: Padding(padding: const EdgeInsets.all(20), child: Row(children: [
-        const Icon(Icons.workspace_premium, color: C.gold, size: 36),
-        const SizedBox(width: 12),
-        Expanded(child: Text('${status.planName ?? 'Premium'} active until ${formatDate(status.planEndsAt)}',
-            style: const TextStyle(fontWeight: FontWeight.w600))),
-      ])));
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(gradient: C.navyGradient, borderRadius: BorderRadius.circular(16)),
+        child: Row(children: [
+          const Icon(Icons.workspace_premium, color: C.gold, size: 36),
+          const SizedBox(width: 12),
+          Expanded(child: Text('${status.planName ?? 'Premium'} active until ${formatDate(status.planEndsAt)}',
+              style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.white))),
+        ]),
+      );
+}
+
+/// Paid mode, plans visible (website / ads APK): "Go Premium" page → "View plans" opens the website plans page.
+class PremiumLanding extends StatelessWidget {
+  const PremiumLanding({super.key, required this.status});
+  final AppStatus status;
+
+  static const _defaultPerks = ['2 TB cloud storage', 'Full premium videos', 'Downloads', 'Pay once with UPI — no auto-renewal'];
+
+  @override
+  Widget build(BuildContext context) {
+    final app = AppScope.of(context);
+    final perks = <String>{for (final p in app.plans) ...((p['perks'] as List?) ?? const []).map((e) => '$e')}.take(5).toList();
+    void open() => Navigator.push(context, MaterialPageRoute(builder: (_) => Scaffold(
+        appBar: AppBar(title: const Text('Choose a plan')), body: PremiumWeb(status: AppScope.of(context).status))));
+    return ListView(padding: const EdgeInsets.all(16), children: [
+      if (status.hasPlan) ...[ActivePlanCard(status: status), const SizedBox(height: 12)]
+      else if (app.pendingOrder != null) ...[
+        Card(child: ListTile(
+          leading: const Icon(Icons.verified_user_outlined, color: C.primary),
+          title: Text('Payment ${app.pendingOrder!['reference']} is being checked'),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => PaymentStatusScreen(orderId: app.pendingOrder!['id'] as String))),
+        )),
+        const SizedBox(height: 12),
+      ],
+      Card(child: Padding(padding: const EdgeInsets.fromLTRB(20, 24, 20, 20), child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Center(child: Container(width: 84, height: 84, decoration: BoxDecoration(color: C.gold.withValues(alpha: .18), shape: BoxShape.circle),
+            child: const Icon(Icons.workspace_premium, color: C.gold, size: 52))),
+        const SizedBox(height: 14),
+        Text(status.hasPlan ? 'Extend Premium' : 'Go Premium', textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800)),
+        const SizedBox(height: 4),
+        const Text('More storage, full videos and downloads.', textAlign: TextAlign.center, style: TextStyle(color: C.muted)),
+        const SizedBox(height: 16),
+        for (final x in perks.isEmpty ? _defaultPerks : perks)
+          Padding(padding: const EdgeInsets.symmetric(vertical: 4), child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const Icon(Icons.check_circle, color: C.primary, size: 20), const SizedBox(width: 10), Expanded(child: Text(x)),
+          ])),
+        const SizedBox(height: 20),
+        GradientButton(label: 'View plans', onPressed: open),
+      ]))),
+      const SizedBox(height: 12),
+      Card(child: Column(children: [
+        ListTile(leading: const Icon(Icons.receipt_long), title: const Text('Payment history'), trailing: const Icon(Icons.chevron_right),
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PaymentHistoryScreen()))),
+      ])),
+    ]);
+  }
 }
 
 /// Paid mode, plans visible (direct/ads builds): website plans page in a WebView.

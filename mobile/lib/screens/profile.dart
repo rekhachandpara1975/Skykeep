@@ -58,12 +58,12 @@ class PremiumTile extends StatelessWidget {
   const PremiumTile({super.key});
   @override
   Widget build(BuildContext context) => DecoratedBox(
-        decoration: BoxDecoration(gradient: C.gradient, borderRadius: BorderRadius.circular(16)),
+        decoration: BoxDecoration(gradient: C.navyGradient, borderRadius: BorderRadius.circular(16)),
         child: ListTile(
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           leading: const Icon(Icons.workspace_premium, color: C.gold, size: 36),
           title: const Text('Go Premium', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
-          subtitle: const Text('2 TB storage · full videos · downloads', style: TextStyle(color: Colors.white)),
+          subtitle: const Text('2 TB storage · full videos · downloads', style: TextStyle(color: Color(0xFFCBD5E1))),
           trailing: const Icon(Icons.chevron_right, color: Colors.white),
           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PremiumScreen())),
         ),
@@ -91,8 +91,8 @@ class AccountCard extends StatelessWidget {
     }
     return Card(child: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       Row(children: [
-        CircleAvatar(radius: 28, backgroundColor: C.surface2, child: Text((status.displayName ?? email ?? 'G').substring(0, 1).toUpperCase(),
-            style: const TextStyle(fontSize: 22, color: C.text))),
+        CircleAvatar(radius: 30, backgroundColor: C.primarySoft, child: Text((status.displayName ?? email ?? 'G').substring(0, 1).toUpperCase(),
+            style: const TextStyle(fontSize: 24, color: C.primary, fontWeight: FontWeight.w700))),
         const SizedBox(width: 12),
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(isGuest ? 'Guest' : status.displayName ?? email ?? '', maxLines: 1, overflow: TextOverflow.ellipsis,
@@ -154,7 +154,7 @@ class SettingsScreen extends StatelessWidget {
             await app.refresh();
             if (context.mounted) Navigator.pop(context);
           }),
-          ListTile(leading: const Icon(Icons.delete_forever, color: C.danger), title: const Text('Delete account', style: TextStyle(color: C.danger)),
+          ListTile(leading: const Icon(Icons.delete_forever, color: C.danger), title: const Text('Delete account', style: TextStyle(color: C.dangerText)),
               onTap: () => _delete(context)),
         ],
         const Divider(),

@@ -4,31 +4,39 @@ import 'package:flutter/material.dart';
 import '../app_state.dart';
 import '../config.dart';
 import '../services/api.dart';
+import '../services/status.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 import 'explore.dart';
 import 'login_sheet.dart';
 import 'premium.dart';
 
-class ChannelsScreen extends StatelessWidget {
+class ChannelsScreen extends StatefulWidget {
   const ChannelsScreen({super.key});
   @override
-  Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 3,
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Channels'),
-          bottom: const TabBar(tabs: [Tab(text: 'Discover'), Tab(text: 'Joined'), Tab(text: 'Mine')]),
-        ),
-        floatingActionButton: FloatingActionButton.extended(
-          onPressed: () => openChannelForm(context),
-          icon: const Icon(Icons.add), label: const Text('Create channel'),
-        ),
-        body: const TabBarView(children: [ChannelList(tab: 'discover'), ChannelList(tab: 'joined'), ChannelList(tab: 'mine')]),
-      ),
-    );
-  }
+  State<ChannelsScreen> createState() => _ChannelsScreenState();
+}
+
+class _ChannelsScreenState extends State<ChannelsScreen> {
+  int _tab = 0;
+  static const _tabs = ['discover', 'joined', 'mine'];
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(title: const Text('Channels')),
+        body: Column(children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+            child: PillTabs(labels: const ['Discover', 'Joined', 'Mine'], index: _tab, onChanged: (i) => setState(() => _tab = i)),
+          ),
+          Expanded(child: IndexedStack(index: _tab, children: [for (final t in _tabs) ChannelList(tab: t)])),
+          SafeArea(top: false, child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+            child: SizedBox(width: double.infinity, child: GradientButton(
+                label: 'Create your channel', icon: Icons.add, onPressed: () => openChannelForm(context))),
+          )),
+        ]),
+      );
 }
 
 Future<void> openChannelForm(BuildContext context, {Json? channel}) async {
@@ -47,6 +55,7 @@ class ChannelList extends StatefulWidget {
 
 class _ChannelListState extends State<ChannelList> {
   Future<List<Json>>? _f;
+  Set<String> _joined = {};
 
   @override
   void didChangeDependencies() {
@@ -54,9 +63,14 @@ class _ChannelListState extends State<ChannelList> {
     _f ??= _load();
   }
 
-  Future<List<Json>> _load() {
+  Future<List<Json>> _load() async {
     final api = AppScope.read(context).api;
-    if (widget.tab != 'discover' && api.isGuest) return Future.value(const []);
+    if (widget.tab != 'discover' && api.isGuest) return const [];
+    if (widget.tab == 'discover' && !api.isGuest) {
+      try {
+        _joined = {for (final c in await api.channels('joined')) c['id'] as String};
+      } catch (_) {}
+    }
     return api.channels(widget.tab);
   }
 
@@ -77,10 +91,11 @@ class _ChannelListState extends State<ChannelList> {
           }
           return ListView.separated(
             physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
             itemCount: s.data!.length,
             separatorBuilder: (_, _) => const SizedBox(height: 10),
-            itemBuilder: (_, i) => ChannelTile(channel: s.data![i], onChanged: _refresh),
+            itemBuilder: (_, i) => ChannelTile(channel: s.data![i], onChanged: _refresh,
+                joined: widget.tab == 'discover' ? _joined.contains(s.data![i]['id']) : null),
           );
         },
       ),
@@ -105,25 +120,82 @@ class ChannelIcon extends StatelessWidget {
       );
 }
 
-class ChannelTile extends StatelessWidget {
-  const ChannelTile({super.key, required this.channel, this.onChanged});
+class ChannelTile extends StatefulWidget {
+  const ChannelTile({super.key, required this.channel, this.onChanged, this.joined});
   final Json channel;
   final VoidCallback? onChanged;
+  /// null = no Join button (Joined / Mine lists)
+  final bool? joined;
+  @override
+  State<ChannelTile> createState() => _ChannelTileState();
+}
+
+class _ChannelTileState extends State<ChannelTile> {
+  late bool? _joined = widget.joined;
+  bool _busy = false;
+
+  @override
+  void didUpdateWidget(ChannelTile old) {
+    super.didUpdateWidget(old);
+    if (old.joined != widget.joined) _joined = widget.joined;
+  }
+
+  Future<void> _toggle() async {
+    final api = AppScope.read(context).api;
+    if (!await requireMember(context, reason: 'Log in to join channels')) return;
+    setState(() => _busy = true);
+    try {
+      final id = widget.channel['id'] as String;
+      if (_joined == true) {
+        await api.leave(id);
+      } else {
+        await api.join(id);
+      }
+      if (mounted) setState(() => _joined = !(_joined ?? false));
+    } catch (e) {
+      if (mounted) toast(context, friendlyError(e));
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final channel = widget.channel;
     final pending = channel['review_status'] == 'pending';
     final rejected = channel['review_status'] == 'rejected';
     return Card(
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        leading: ChannelIcon(keyName: channel['icon_url'] as String?),
-        title: Text(channel['name'] as String, maxLines: 1, overflow: TextOverflow.ellipsis),
-        subtitle: Text(pending ? 'Waiting for approval' : rejected ? 'Not approved' : '${channel['members_count'] ?? 0} members · ${channel['category'] ?? ''}',
-            style: TextStyle(color: pending ? C.warning : rejected ? C.danger : C.muted)),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
         onTap: () async {
           await Navigator.push(context, MaterialPageRoute(builder: (_) => ChannelPage(channelId: channel['id'] as String)));
-          onChanged?.call();
+          widget.onChanged?.call();
         },
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+          child: Row(children: [
+            ClipOval(child: ChannelIcon(keyName: channel['icon_url'] as String?, size: 48)),
+            const SizedBox(width: 12),
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(channel['name'] as String, maxLines: 1, overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+              const SizedBox(height: 2),
+              Text(pending ? 'Waiting for approval' : rejected ? 'Not approved'
+                  : '${compactCount(channel['members_count'] as num? ?? 0)} members${channel['category'] == null ? '' : ' · ${channel['category']}'}',
+                  maxLines: 1, overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontSize: 13, color: pending ? C.warningText : rejected ? C.dangerText : C.muted)),
+            ])),
+            if (_joined != null) ...[
+              const SizedBox(width: 8),
+              _joined!
+                  ? OutlinedButton(onPressed: _busy ? null : _toggle,
+                      style: OutlinedButton.styleFrom(minimumSize: const Size(80, 40)), child: const Text('Joined'))
+                  : FilledButton(onPressed: _busy ? null : _toggle,
+                      style: FilledButton.styleFrom(minimumSize: const Size(80, 40), backgroundColor: C.primarySoft, foregroundColor: C.primary),
+                      child: const Text('Join')),
+            ],
+          ]),
+        ),
       ),
     );
   }

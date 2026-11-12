@@ -111,3 +111,18 @@ String rupees(num v, {bool paise = false}) {
   final showFrac = paise || frac != 0;
   return '${v < 0 ? '-' : ''}₹$g${showFrac ? '.${frac.toString().padLeft(2, '0')}' : ''}';
 }
+
+/// "2 hours ago"
+String timeAgo(DateTime? d, {DateTime? now}) {
+  if (d == null) return '';
+  final diff = (now ?? DateTime.now()).difference(d);
+  if (diff.inMinutes < 1) return 'just now';
+  if (diff.inHours < 1) return '${diff.inMinutes} min ago';
+  if (diff.inDays < 1) return '${diff.inHours} ${diff.inHours == 1 ? 'hour' : 'hours'} ago';
+  if (diff.inDays < 7) return '${diff.inDays} ${diff.inDays == 1 ? 'day' : 'days'} ago';
+  return formatDate(d);
+}
+
+/// 245000 → "245K"
+String compactCount(num n) => n >= 1000000 ? '${(n / 1000000).toStringAsFixed(n >= 10000000 ? 0 : 1)}M'
+    : n >= 1000 ? '${(n / 1000).toStringAsFixed(n >= 10000 ? 0 : 1)}K' : '$n';

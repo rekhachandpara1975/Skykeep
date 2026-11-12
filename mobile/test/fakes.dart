@@ -93,6 +93,13 @@ class FakeApi extends Api {
   @override
   Future<List<Json>> cloudFiles(String? folderId) async => const [];
 
+  // ---------- explore / feed ----------
+  List<Json> recentFilesList = const [];
+  @override
+  Future<List<Json>> recentFiles({int limit = 3}) async => recentFilesList;
+  @override
+  Future<List<Json>> followingPosts({int page = 0}) async => guest || page > 0 ? const [] : posts;
+
   // ---------- UPI proof ----------
   final proofs = <List<String>>[];
   String? proofError;

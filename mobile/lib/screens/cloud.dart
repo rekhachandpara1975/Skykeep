@@ -133,15 +133,34 @@ class _CloudScreenState extends State<CloudScreen> {
                 PopupMenuItem(value: FileType.video, child: Text('Videos')),
                 PopupMenuItem(value: FileType.any, child: Text('Files')),
               ],
-              child: const FloatingActionButton.extended(onPressed: null, icon: Icon(Icons.upload), label: Text('Upload')),
+              child: const FloatingActionButton(onPressed: null, child: Icon(Icons.add, size: 30)),
             )
           : null,
       body: RefreshIndicator(
         onRefresh: () async { await app.refresh(); await _load(); },
         child: ListView(physics: const AlwaysScrollableScrollPhysics(), padding: const EdgeInsets.fromLTRB(16, 8, 16, 96), children: [
-          Card(child: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            StorageMeter(used: s.usedBytes, quota: s.quotaBytes),
-            const SizedBox(height: 12),
+          Card(child: Padding(padding: const EdgeInsets.all(18), child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            Row(children: [
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                const Text('Storage', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 17)),
+                const SizedBox(height: 4),
+                Semantics(
+                  label: 'Storage ${formatBytes(s.usedBytes)} of ${formatBytes(s.quotaBytes)} used',
+                  excludeSemantics: true,
+                  child: Text(s.quotaBytes == 0 ? 'No cloud storage yet'
+                      : '${formatBytes((s.quotaBytes - s.usedBytes).clamp(0, s.quotaBytes))} free of ${formatBytes(s.quotaBytes)}',
+                      style: const TextStyle(color: C.muted)),
+                ),
+                if (s.quotaBytes > 0) Text('${formatBytes(s.usedBytes)} of ${formatBytes(s.quotaBytes)} used',
+                    style: const TextStyle(color: C.muted, fontSize: 12)),
+                if (!app.api.isGuest && !s.hasPlan && s.plansVisible && !s.freeMode && !Config.playStore && s.quotaBytes > 0) ...[
+                  const SizedBox(height: 10),
+                  FilledButton(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PremiumScreen())),
+                      style: FilledButton.styleFrom(minimumSize: const Size(96, 40)), child: const Text('Upgrade')),
+                ],
+              ])),
+              StorageRing(used: s.usedBytes, quota: s.quotaBytes),
+            ]),
             CloudPrompt(status: s, isGuest: app.api.isGuest),
           ]))),
           const SizedBox(height: 12),
@@ -150,9 +169,12 @@ class _CloudScreenState extends State<CloudScreen> {
                 subtitle: LinearProgressIndicator(value: u.value)),
           if (_error) ErrorRetry(onRetry: _load),
           if (_loading && _files.isEmpty && _folders.isEmpty) ...[const Skeleton(), const Skeleton()],
+          if (_folders.isNotEmpty || _files.isNotEmpty)
+            Padding(padding: const EdgeInsets.fromLTRB(4, 8, 4, 4),
+                child: Text(_path.isEmpty ? 'My files' : 'In ${_path.last['name']}', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 17))),
           for (final d in _folders)
             ListTile(
-              leading: const Icon(Icons.folder, color: C.primary),
+              leading: const Icon(Icons.folder_rounded, color: C.folder, size: 36),
               title: Text(d['name'] as String),
               onTap: () { setState(() => _path.add(d)); _load(); },
               trailing: IconButton(tooltip: 'Delete folder', icon: const Icon(Icons.delete_outline), onPressed: () async {
@@ -162,7 +184,8 @@ class _CloudScreenState extends State<CloudScreen> {
             ),
           for (final f in _files)
             ListTile(
-              leading: Icon(_iconFor(f['mime'] as String?), color: C.muted),
+              leading: Container(width: 40, height: 40, decoration: BoxDecoration(color: C.surface2, borderRadius: BorderRadius.circular(10)),
+                  child: Icon(_iconFor(f['mime'] as String?), color: C.primary)),
               title: Text(f['name'] as String, maxLines: 1, overflow: TextOverflow.ellipsis),
               subtitle: Text(formatBytes(f['size_bytes'] as num)),
               onTap: () => _fileMenu(f),
@@ -189,21 +212,23 @@ class CloudPrompt extends StatelessWidget {
     final freeStorage = status.freeMode || Config.playStore;
     if (isGuest) {
       return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        const SizedBox(height: 12),
         Text(freeStorage ? 'Log in to get 15 GB free cloud storage.' : 'Log in to use cloud storage.'),
         const SizedBox(height: 8),
         GradientButton(label: 'Log in', onPressed: () => requireMember(context, reason: 'Log in for cloud storage')),
       ]);
     }
     if (status.quotaBytes > 0) return const SizedBox();
-    if (Config.playStore) return const Text('Verifying your device for 15 GB free storage…', style: TextStyle(color: C.muted));
+    if (Config.playStore) return const Padding(padding: EdgeInsets.only(top: 12), child: Text('Verifying your device for 15 GB free storage…', style: TextStyle(color: C.muted)));
     if (status.plansVisible) {
       return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        const SizedBox(height: 12),
         const Text('Get Premium for 2 TB of cloud storage.'),
         const SizedBox(height: 8),
         GradientButton(label: 'See Premium', icon: Icons.workspace_premium,
             onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PremiumScreen()))),
       ]);
     }
-    return const Text('Cloud storage is for Premium members.', style: TextStyle(color: C.muted));
+    return const Padding(padding: EdgeInsets.only(top: 12), child: Text('Cloud storage is for Premium members.', style: TextStyle(color: C.muted)));
   }
 }

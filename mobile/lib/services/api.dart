@@ -124,12 +124,31 @@ class Api {
   // ---------- content ----------
   static const pageSize = 20;
   Future<List<Json>> latestPosts({int page = 0, String? category, String? query}) async {
-    var q = db.from('posts').select('id,title,description,created_at,channel_id,channels!inner(id,name,category,icon_url),post_items(thumbnail_key,is_premium)');
+    var q = db.from('posts').select(_postCols);
     if (category != null) q = q.eq('channels.category', category);
     if (query != null && query.isNotEmpty) q = q.ilike('title', '%$query%');
     final blocked = await blockedChannelIds();
     if (blocked.isNotEmpty) q = q.not('channel_id', 'in', '(${blocked.join(',')})');
     return List<Json>.from(await q.order('created_at', ascending: false).range(page * pageSize, page * pageSize + pageSize - 1));
+  }
+
+  static const _postCols = 'id,title,description,created_at,channel_id,channels!inner(id,name,category,icon_url,members_count),post_items(thumbnail_key,is_premium)';
+
+  /// Feed › Following: newest posts from channels the user joined.
+  Future<List<Json>> followingPosts({int page = 0}) async {
+    if (user == null || isGuest) return const [];
+    final joined = await db.from('channel_members').select('channel_id').eq('user_id', user!.id);
+    final ids = [for (final x in joined) x['channel_id'] as String];
+    if (ids.isEmpty) return const [];
+    return List<Json>.from(await db.from('posts').select(_postCols).inFilter('channel_id', ids)
+        .order('created_at', ascending: false).range(page * pageSize, page * pageSize + pageSize - 1));
+  }
+
+  /// Explore › Recent files (members with cloud storage).
+  Future<List<Json>> recentFiles({int limit = 3}) async {
+    if (user == null || isGuest) return const [];
+    return List<Json>.from(await db.from('cloud_files').select('id,name,mime,size_bytes,created_at')
+        .order('created_at', ascending: false).limit(limit));
   }
 
   Future<List<String>> categories() async {
