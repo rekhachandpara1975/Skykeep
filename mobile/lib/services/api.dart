@@ -266,8 +266,8 @@ class Api {
   Future<void> renameFile(String id, String name) => db.from('cloud_files').update({'name': name}).eq('id', id);
   Future<void> moveFile(String id, String? folderId) => db.from('cloud_files').update({'folder_id': folderId}).eq('id', id);
   Future<void> deleteFile(String id) => db.functions.invoke('cloud-files', body: {'action': 'delete', 'id': id});
-  Future<String?> fileUrl(String id) async =>
-      (await db.functions.invoke('cloud-files', body: {'action': 'download', 'id': id})).data?['url'] as String?;
+  Future<String?> fileUrl(String id, {bool download = false}) async =>
+      (await db.functions.invoke('cloud-files', body: {'action': 'download', 'id': id, 'save': download})).data?['url'] as String?;
 
   /// Upload with progress. Retries the transfer up to 3 times on network errors.
   /// shortcut: re-sends the whole file on retry (no TUS chunk resume); switch to resumable uploads for >500 MB files.
