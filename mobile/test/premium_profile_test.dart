@@ -109,6 +109,23 @@ void main() {
     });
   });
 
+  group('Avatar letter', () {
+    test('never fails on empty names or emails', () {
+      expect(avatarInitial(null, null), 'G');
+      expect(avatarInitial('', ''), 'G');
+      expect(avatarInitial('  ', ''), 'G');
+      expect(avatarInitial('', 'asha@x.in'), 'A');
+      expect(avatarInitial('ravi', null), 'R');
+    });
+
+    testWidgets('profile still draws when the name is empty', (t) async {
+      final st = statusJson()..['display_name'] = '';
+      await pumpApp(t, FakeApi(status: st), const ProfileScreen());
+      expect(find.text('My cloud'), findsOneWidget);
+      expect(find.text('Your account'), findsOneWidget);
+    });
+  });
+
   group('Plan labels', () {
     test('durations and unit prices', () {
       expect(planDuration({'duration_days': 2}), '2 Days');

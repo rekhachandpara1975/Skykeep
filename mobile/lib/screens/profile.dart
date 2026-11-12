@@ -167,13 +167,22 @@ class PremiumTile extends StatelessWidget {
       );
 }
 
+/// First letter for the round avatar; never fails on empty names ("G" for guests).
+String avatarInitial(String? name, String? email) {
+  final v = nonEmpty(name?.trim()) ?? nonEmpty(email?.trim());
+  return v == null ? 'G' : v.substring(0, 1).toUpperCase();
+}
+
+String? nonEmpty(String? v) => v == null || v.isEmpty ? null : v;
+
 class AccountCard extends StatelessWidget {
   const AccountCard({super.key, required this.status, required this.isGuest});
   final AppStatus status;
   final bool isGuest;
   @override
   Widget build(BuildContext context) {
-    final email = AppScope.read(context).api.user?.email;
+    final rawEmail = AppScope.read(context).api.user?.email;
+    final email = (rawEmail == null || rawEmail.isEmpty) ? null : rawEmail; // guests have an empty email
     final String planLine;
     if (isGuest) {
       planLine = 'Guest';
@@ -188,11 +197,11 @@ class AccountCard extends StatelessWidget {
     }
     return Card(child: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       Row(children: [
-        CircleAvatar(radius: 30, backgroundColor: C.primarySoft, child: Text((status.displayName ?? email ?? 'G').substring(0, 1).toUpperCase(),
+        CircleAvatar(radius: 30, backgroundColor: C.primarySoft, child: Text(avatarInitial(isGuest ? null : status.displayName, isGuest ? null : email),
             style: const TextStyle(fontSize: 24, color: C.primary, fontWeight: FontWeight.w700))),
         const SizedBox(width: 12),
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(isGuest ? 'Guest' : status.displayName ?? email ?? '', maxLines: 1, overflow: TextOverflow.ellipsis,
+          Text(isGuest ? 'Guest' : nonEmpty(status.displayName) ?? email ?? 'Your account', maxLines: 1, overflow: TextOverflow.ellipsis,
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
           if (!isGuest && email != null) Text(email, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: C.muted)),
           const SizedBox(height: 4),
