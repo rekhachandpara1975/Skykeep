@@ -8,6 +8,7 @@ import '../services/status.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 import 'explore.dart';
+import 'home.dart' show HomeShellState;
 import 'login_sheet.dart';
 import 'profile.dart' show ProfileButton;
 import 'premium.dart';
@@ -44,6 +45,11 @@ Future<void> openChannelForm(BuildContext context, {Json? channel}) async {
   if (!await requireMember(context, reason: 'Log in to create a channel')) return;
   if (!context.mounted || !await requireConsent(context)) return;
   if (!context.mounted) return;
+  if (!AppScope.read(context).status.isPremium) {
+    toast(context, 'Creating channels and uploading content is for Premium members');
+    if (Config.sellsPlans) { Navigator.of(context).popUntil((r) => r.isFirst); HomeShellState.current?.go(HomeShellState.premiumTab); }
+    return;
+  }
   await Navigator.push(context, MaterialPageRoute(builder: (_) => ChannelForm(channel: channel)));
 }
 
