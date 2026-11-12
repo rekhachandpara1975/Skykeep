@@ -10,7 +10,7 @@ import 'package:skykeep/screens/profile.dart';
 import 'fakes.dart';
 
 void main() {
-  final skip = !Config.playStore ? 'needs --dart-define=PLAY_STORE=true' : null;
+  final skip = !Config.playStore || Config.sellsPlans ? 'needs --dart-define=PLAY_STORE=true (without PLAY_SELLS_UPI)' : null;
 
   testWidgets('Play build: no crown, no Premium tile, no prices, no web plans', (t) async {
     final api = FakeApi(status: statusJson(plansVisible: true, paymentsAvailable: true));

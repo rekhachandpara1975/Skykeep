@@ -24,7 +24,7 @@ class PremiumScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final app = AppScope.of(context);
     final s = app.status;
-    final mode = premiumMode(s, playStore: Config.playStore);
+    final mode = premiumMode(s, playStore: !Config.sellsPlans);
     final body = switch (mode) {
       PremiumMode.freeAccount => FreeAccountCard(status: s, isGuest: app.api.isGuest),
       PremiumMode.hidden => HiddenPlansView(status: s),

@@ -1,3 +1,8 @@
+> **Owner's decision (Nov 2026):** the Play build (`SkyKeep-play.aab`) now also sells plans through the owner's UPI
+> (`--dart-define=PLAY_SELLS_UPI=true`). Google Play's Payments policy requires Google Play Billing for digital
+> goods (India allows other billing only *alongside* Play Billing after enrolment). Expect review rejection or
+> warnings; to go back to the policy-safe build, remove `PLAY_SELLS_UPI=true` from `.github/workflows/mobile.yml`.
+
 # Play Store build (`com.skykeep.play`)
 
 Premium is sold **only** through your own UPI intent checkout, in the website APK and the ads APK.
