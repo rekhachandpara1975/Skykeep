@@ -344,6 +344,30 @@ class _ChannelFormState extends State<ChannelForm> {
   late final _tags = TextEditingController(text: ((widget.channel?['tags'] as List?) ?? const []).join(', '));
   late String? _icon = widget.channel?['icon_url'] as String?;
   bool _busy = false;
+  String? _nameError;
+
+  @override
+  void initState() {
+    super.initState();
+    // listen to the controller (not only onChanged) so paste, autofill and keyboard suggestions count too
+    _name.addListener(() { if (_nameError != null && _name.text.trim().length >= 2) setState(() => _nameError = null); });
+  }
+
+  @override
+  void dispose() {
+    for (final c in [_name, _desc, _cat, _tags]) {
+      c.dispose();
+    }
+    super.dispose();
+  }
+
+  void _submit() {
+    if (_name.text.trim().length < 2) {
+      setState(() => _nameError = 'Enter a channel name (at least 2 characters)');
+      return;
+    }
+    _save();
+  }
 
   Future<void> _pickIcon() async {
     final file = await FilePicker.pickFile(type: FileType.image);
@@ -366,7 +390,7 @@ class _ChannelFormState extends State<ChannelForm> {
         if (widget.channel == null) 'created_by': AppScope.read(context).api.user!.id,
       }, id: widget.channel?['id'] as String?);
       if (!mounted) return;
-      toast(context, 'Sent for approval — you will see “Waiting for approval” until our team reviews it.');
+      toast(context, widget.channel == null ? 'Channel created — it goes live after a quick review.' : 'Changes saved — they go live after a quick review.');
       Navigator.pop(context);
     } catch (e) {
       if (mounted) toast(context, friendlyError(e));
@@ -385,16 +409,20 @@ class _ChannelFormState extends State<ChannelForm> {
           OutlinedButton.icon(onPressed: _busy ? null : _pickIcon, icon: const Icon(Icons.image), label: const Text('Choose icon')),
         ]),
         const SizedBox(height: 16),
-        TextField(controller: _name, maxLength: 80, decoration: const InputDecoration(labelText: 'Name'), onChanged: (_) => setState(() {})),
-        TextField(controller: _desc, maxLines: 4, maxLength: 2000, decoration: const InputDecoration(labelText: 'Description')),
+        TextField(controller: _name, maxLength: 80, textInputAction: TextInputAction.next,
+            decoration: InputDecoration(labelText: 'Channel name', errorText: _nameError)),
+        TextField(controller: _desc, maxLines: 4, maxLength: 2000, decoration: const InputDecoration(labelText: 'Description (optional)')),
         const SizedBox(height: 8),
-        TextField(controller: _cat, decoration: const InputDecoration(labelText: 'Category')),
+        TextField(controller: _cat, decoration: const InputDecoration(labelText: 'Category (optional)')),
         const SizedBox(height: 12),
-        TextField(controller: _tags, decoration: const InputDecoration(labelText: 'Tags (comma separated)')),
+        TextField(controller: _tags, decoration: const InputDecoration(labelText: 'Tags (optional, comma separated)')),
         const SizedBox(height: 8),
-        const Text('Changes to name, description, category, tags or icon are reviewed again before they go live.', style: TextStyle(color: C.muted)),
+        const Text('New channels and changes are checked by our team before they go live.', style: TextStyle(color: C.muted)),
         const SizedBox(height: 16),
-        GradientButton(label: _busy ? 'Saving…' : 'Submit for approval', onPressed: _busy || _name.text.trim().length < 2 ? null : _save),
+        GradientButton(
+          label: _busy ? 'Saving…' : (widget.channel == null ? 'Create channel' : 'Save changes'),
+          onPressed: _busy ? null : _submit,
+        ),
       ]),
     );
   }
