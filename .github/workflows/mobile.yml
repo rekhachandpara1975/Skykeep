@@ -81,6 +81,8 @@ jobs:
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           mkdir -p out
+          # Play needs a higher versionCode for every upload: use the CI run number
+          DEFINES="$DEFINES --build-number=$((100 + ${{ github.run_number }}))"
           flutter build apk --release --flavor direct $DEFINES
           cp build/app/outputs/flutter-apk/app-direct-release.apk out/SkyKeep.apk
           check_manifest() { # merged-manifest check: package, callback scheme, no AD_ID
@@ -108,3 +110,12 @@ jobs:
           (cd out && sha256sum SkyKeep.apk SkyKeep-ads.apk SkyKeep-play.aab > SHA256SUMS && cat SHA256SUMS)
       - uses: actions/upload-artifact@v4
         with: { name: SkyKeep-apks, path: mobile/out }
+      - name: Publish download links (main only)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env: { GH_TOKEN: '${{ github.token }}' }
+        run: |
+          cd out
+          gh release delete latest --yes --cleanup-tag 2>/dev/null || true
+          gh release create latest SkyKeep.apk SkyKeep-ads.apk SkyKeep-play.aab SHA256SUMS \
+            --title "SkyKeep (latest build)" --latest \
+            --notes "SkyKeep.apk — install on Android. SkyKeep-play.aab — upload to Google Play Console. Built from ${{ github.sha }}."
