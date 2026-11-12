@@ -1,0 +1,110 @@
+name: mobile
+
+on:
+  pull_request:
+    paths: ['mobile/**', '.github/workflows/mobile.yml']
+  push:
+    branches: [main]
+    paths: ['mobile/**', '.github/workflows/mobile.yml']
+
+concurrency:
+  group: mobile-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  FLUTTER_VERSION: 3.47.7 # pinned stable
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    permissions: { contents: write }
+    defaults: { run: { working-directory: mobile } }
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: '${{ github.head_ref || github.ref }}' }
+      - uses: subosito/flutter-action@v2
+        with: { flutter-version: '${{ env.FLUTTER_VERSION }}', channel: stable, cache: true }
+      - run: flutter pub get --enforce-lockfile
+      - run: flutter analyze --fatal-infos
+      # Screenshots: on pull requests from this repo, CI redraws the golden images and commits any change to the PR,
+      # so the visual difference is reviewed in the PR's Files tab. On main they are compared as usual.
+      - name: Update golden screenshots (pull requests)
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        run: |
+          flutter test --update-goldens --tags golden
+          if [ -n "$(git status --porcelain test/goldens)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add test/goldens
+            git commit -m "Update golden screenshots"
+            git push
+          fi
+      - run: flutter test
+      - name: Play-build test (PLAY_STORE=true)
+        run: flutter test --dart-define=PLAY_STORE=true test/play_build_test.dart
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with: { name: golden-failures, path: mobile/test/failures, if-no-files-found: ignore }
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: mobile } }
+    env:
+      DEFINES: --dart-define=SUPABASE_URL=${{ secrets.SUPABASE_URL }} --dart-define=SUPABASE_PUBLISHABLE_KEY=${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: '17' }
+      - uses: subosito/flutter-action@v2
+        with: { flutter-version: '${{ env.FLUTTER_VERSION }}', channel: stable, cache: true }
+      - run: flutter pub get --enforce-lockfile
+      - name: Release keystore (from secrets, never committed)
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$KEYSTORE_B64" ]; then
+            echo "::warning::ANDROID_KEYSTORE_BASE64 not set — building with the debug key. Add the release secrets before publishing."
+            if [ "${{ github.event_name }}" = "push" ]; then echo "::error::release key required on main"; exit 1; fi
+          else
+            echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/release.jks"
+            echo "ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
+          fi
+      - name: Kotlin unit tests (UPI response parser)
+        run: |
+          flutter build apk --config-only --flavor direct
+          cd android && ./gradlew --no-daemon :app:testDirectDebugUnitTest
+      - name: Build direct APK, ads APK, Play AAB
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          mkdir -p out
+          flutter build apk --release --flavor direct $DEFINES
+          cp build/app/outputs/flutter-apk/app-direct-release.apk out/SkyKeep.apk
+          check_manifest() { # merged-manifest check: package, callback scheme, no AD_ID
+            m=$(find build/app/intermediates -path "*$1*" -name AndroidManifest.xml | grep -i merged | head -1)
+            echo "checking $m"
+            grep -q "package=\"$2\"" "$m"
+            grep -q "android:scheme=\"$2\"" "$m"
+            grep -q 'android:host="login-callback"' "$m"
+            ! grep -q 'com.google.android.gms.permission.AD_ID' "$m"
+          }
+          check_manifest directRelease com.skykeep.app
+          flutter build apk --release --flavor direct $DEFINES \
+            "--dart-define=APK_REFERRER=utm_source=meta&utm_medium=paid_social&utm_campaign=apk_download"
+          cp build/app/outputs/flutter-apk/app-direct-release.apk out/SkyKeep-ads.apk
+          flutter build appbundle --release --flavor play $DEFINES --dart-define=PLAY_STORE=true --dart-define=ANDROID_APP_ID=com.skykeep.play
+          cp build/app/outputs/bundle/playRelease/app-play-release.aab out/SkyKeep-play.aab
+          check_manifest playRelease com.skykeep.play
+      - name: Verify signatures + checksums
+        run: |
+          BT=$(ls -d $ANDROID_HOME/build-tools/* | sort -V | tail -1)
+          for f in out/*.apk; do "$BT/apksigner" verify --print-certs "$f" | tee -a out/signatures.txt; done
+          jarsigner -verify out/SkyKeep-play.aab | tail -1
+          grep -m1 "SHA-256" out/signatures.txt | sed 's/.*: //' | sed 's/\(..\)/\1:/g; s/:$//' | tr a-f A-F > out/ANDROID_SIGNING_SHA256.txt
+          echo "ANDROID_SIGNING_SHA256 for Vercel: $(cat out/ANDROID_SIGNING_SHA256.txt)"
+          (cd out && sha256sum SkyKeep.apk SkyKeep-ads.apk SkyKeep-play.aab > SHA256SUMS && cat SHA256SUMS)
+      - uses: actions/upload-artifact@v4
+        with: { name: SkyKeep-apks, path: mobile/out }

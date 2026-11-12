@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 13+ themed icon: one colour, play mark cut out of the cloud -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
+    <group android:translateY="1.5">
+        <path android:fillColor="#FFFFFFFF" android:fillType="evenOdd" android:pathData="M39,70 H69 A13,13 0 1,0 66.52,44.24 A15,15 0 0,0 37.115,46.149 A12,12 0 0,0 39,70 Z M48.5,49 L48.5,66 L63.5,57.5 Z" />
+    </group>
+</vector>

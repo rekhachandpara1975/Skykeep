@@ -1,0 +1,37 @@
+project_id = "skykeep"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "storage", "graphql_public"]
+
+[db]
+port = 54322
+major_version = 17
+
+[realtime]
+enabled = true
+
+[storage]
+enabled = true
+file_size_limit = "5GiB"
+
+[auth]
+enabled = true
+site_url = "https://skykeep.vercel.app"
+additional_redirect_urls = ["com.skykeep.app://login-callback", "com.skykeep.play://login-callback", "https://skykeep.vercel.app/**"]
+enable_anonymous_sign_ins = true
+enable_signup = true
+
+[auth.email]
+enable_signup = true
+enable_confirmations = true
+
+[edge_runtime]
+enabled = true
+
+[functions.deletion-request]
+verify_jwt = false
+
+[functions.upi-webhook]
+verify_jwt = false

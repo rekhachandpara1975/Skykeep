@@ -1,0 +1,65 @@
+name: admin
+
+on:
+  pull_request:
+    paths: ['admin/**', '.github/workflows/admin.yml']
+  push:
+    branches: [main]
+    paths: ['admin/**', '.github/workflows/admin.yml']
+
+concurrency:
+  group: admin-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  admin:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: admin } }
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_placeholder
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: admin/package-lock.json }
+      - run: npm ci
+      - run: npm run lint -- --max-warnings 0
+      - run: npm run typecheck
+      - run: npm run build
+
+  admin-visual:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with: { version: latest }
+      - run: supabase start -x studio,imgproxy,vector,logflare,supavisor,mailpit
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: admin/package-lock.json }
+      - name: Local env + test owner (random password, CI only)
+        run: |
+          supabase status -o env > /tmp/sb.env
+          set -a; . /tmp/sb.env; set +a
+          PASS=$(openssl rand -hex 16)
+          echo "::add-mask::$PASS"
+          UID_=$(curl -sf -X POST "$API_URL/auth/v1/admin/users" -H "apikey: $SERVICE_ROLE_KEY" -H "Authorization: Bearer $SERVICE_ROLE_KEY" \
+            -H 'Content-Type: application/json' -d "{\"email\":\"owner@ci.test\",\"password\":\"$PASS\",\"email_confirm\":true}" | jq -r .id)
+          psql "$DB_URL" -c "insert into public.admins (user_id, role, email) values ('$UID_', 'owner', 'owner@ci.test')"
+          {
+            echo "NEXT_PUBLIC_SUPABASE_URL=$API_URL"
+            echo "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=${PUBLISHABLE_KEY:-$ANON_KEY}"
+            echo "SUPABASE_SECRET_KEY=${SECRET_KEY:-$SERVICE_ROLE_KEY}"
+            echo "ADMIN_EMAIL=owner@ci.test"
+            echo "ADMIN_PASSWORD=$PASS"
+          } >> "$GITHUB_ENV"
+      - working-directory: admin
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+          npm run build
+          (npm start > /tmp/next.log 2>&1 &)
+          npx wait-on -t 60000 http://localhost:3000
+          npx playwright test
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with: { name: admin-screenshots, path: admin/screenshots, if-no-files-found: ignore }
