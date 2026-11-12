@@ -1,5 +1,5 @@
 import { supabasePublic } from '@/lib/supabase/server';
-import { APP_NAME, ADS_APK_PATH } from '@/lib/site';
+import { APP_NAME, ADS_APK_URL } from '@/lib/site';
 import { DownloadClient } from './client';
 
 export const metadata = { title: `Download ${APP_NAME} for Android` };
@@ -8,7 +8,7 @@ export const revalidate = 300;
 export default async function Download() {
   const sb = supabasePublic();
   const { data: m } = await sb.from('meta_settings').select('pixel_id, enabled').single();
-  const apk = sb.storage.from('downloads').getPublicUrl(ADS_APK_PATH).data.publicUrl;
+  const apk = ADS_APK_URL;
   return (
     <main className="mx-auto max-w-xl px-4 py-10 text-center">
       <h1 className="text-3xl font-bold">Get {APP_NAME}</h1>

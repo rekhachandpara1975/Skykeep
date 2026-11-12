@@ -1,9 +1,8 @@
 import { requireAdmin, supabaseServer } from '@/lib/supabase/server';
 import { run, str, bool } from '@/lib/action';
 import { Submit } from '@/components/ui';
-import { FileUpload } from '@/components/file-upload';
 import { count, dateTime } from '@/lib/format';
-import { ADS_APK_PATH } from '@/lib/site';
+import { ADS_APK_URL } from '@/lib/site';
 
 async function save(f: FormData) {
   'use server';
@@ -33,7 +32,7 @@ export default async function Meta() {
     sb.from('meta_events').select('status'),
   ]);
   const by = (s: string) => (q ?? []).filter((e) => e.status === s).length;
-  const apk = sb.storage.from('downloads').getPublicUrl(ADS_APK_PATH).data.publicUrl;
+  const apk = ADS_APK_URL;
   const healthy = m?.enabled && m?.last_success_at && !m?.last_error;
 
   return (
@@ -56,8 +55,7 @@ export default async function Meta() {
           <form action={test} className="card"><h2 className="h2">Send test event</h2><p className="mb-2 text-sm text-muted">Sends a Lead event with your test code.</p><Submit className="btn-ghost">Send test event</Submit></form>
           <div className="card space-y-2">
             <h2 className="h2 mb-0">Ads APK</h2>
-            <p className="text-sm text-muted">Upload {ADS_APK_PATH} from the CI artifact. The /d page links to it.</p>
-            <FileUpload name="apk" bucket="downloads" folder="" fixedPath={ADS_APK_PATH} upsert accept=".apk,application/vnd.android.package-archive" label="Upload ads APK" />
+            <p className="text-sm text-muted">Every build on main publishes the newest ads APK automatically; the /d page links to it.</p>
             <p className="break-all text-xs">Public link: <a className="text-accent underline" href={apk}>{apk}</a></p>
           </div>
         </div>
