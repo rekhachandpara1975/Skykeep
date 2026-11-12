@@ -14,6 +14,14 @@ class MainActivity : FlutterActivity() {
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "app/upi").setMethodCallHandler { call, result ->
+            if (call.method == "qr") {
+                val u = call.argument<String>("uri") ?: return@setMethodCallHandler result.error("bad_uri", "missing uri", null)
+                return@setMethodCallHandler try {
+                    result.success(UpiQr.png(u, call.argument<Int>("size") ?: 600))
+                } catch (e: Exception) {
+                    result.error("qr", e.message, null)
+                }
+            }
             if (call.method != "pay") return@setMethodCallHandler result.notImplemented()
             val uri = call.argument<String>("uri") ?: return@setMethodCallHandler result.error("bad_uri", "missing uri", null)
             if (pendingUpi != null) return@setMethodCallHandler result.error("busy", "payment already open", null)
@@ -39,7 +47,11 @@ class MainActivity : FlutterActivity() {
         val r = pendingUpi ?: return
         pendingUpi = null
         val raw = data?.getStringExtra("response") ?: data?.getStringExtra("Status")?.let { "Status=$it" }
-        r.success(mapOf("response" to raw, "cancelled" to (resultCode != Activity.RESULT_OK && raw == null)))
+        r.success(mapOf(
+            "response" to raw,
+            "cancelled" to (resultCode != Activity.RESULT_OK && raw == null),
+            "parsed" to UpiResponse.parse(raw).toMap(),
+        ))
     }
 
     companion object { private const val UPI_REQUEST = 4711 }

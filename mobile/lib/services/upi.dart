@@ -13,7 +13,7 @@ String buildUpiUri({required String upiId, required String payee, required Strin
       '&am=${amountInr.toStringAsFixed(2)}&cu=INR&tn=${enc('${Config.appName} $reference')}';
 }
 
-enum UpiOutcome { success, failure, noResponse, unknown }
+enum UpiOutcome { success, failure, submitted, noResponse, unknown }
 
 class UpiResult {
   const UpiResult(this.outcome, {this.txnId, this.txnRef, this.raw});
@@ -35,6 +35,7 @@ UpiResult parseUpiResult(String? raw) {
   final outcome = switch (status) {
     'SUCCESS' => UpiOutcome.success,
     'FAILURE' || 'FAILED' => UpiOutcome.failure,
+    'SUBMITTED' || 'PENDING' => UpiOutcome.submitted,
     'NO_RESPONSE' => UpiOutcome.noResponse,
     _ => UpiOutcome.unknown,
   };
@@ -56,6 +57,17 @@ class UpiLauncher {
   Future<UpiLaunch> pay(String uri) async {
     final r = Map<String, dynamic>.from(await _ch.invokeMethod<Map>('pay', {'uri': uri}) ?? const {});
     return UpiLaunch(response: r['response'] as String?, noApp: r['no_app'] == true, cancelled: r['cancelled'] == true);
+  }
+
+  /// PNG QR code of the same upi:// URI (generated natively with ZXing). Null if it could not be made.
+  Future<List<int>?> qr(String uri, {int size = 600}) async {
+    try {
+      return await _ch.invokeMethod<List<int>>('qr', {'uri': uri, 'size': size});
+    } on PlatformException {
+      return null;
+    } on MissingPluginException {
+      return null;
+    }
   }
 }
 

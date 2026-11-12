@@ -18,6 +18,10 @@ void main() {
       expect(parseUpiResult('status=success&txnref=SK1').outcome, UpiOutcome.success);
     });
     test('FAILURE', () => expect(parseUpiResult('Status=FAILURE&txnRef=SK1').outcome, UpiOutcome.failure));
+    test('SUBMITTED / PENDING', () {
+      expect(parseUpiResult('Status=SUBMITTED&txnRef=SK1').outcome, UpiOutcome.submitted);
+      expect(parseUpiResult('status=pending').outcome, UpiOutcome.submitted);
+    });
     test('NO_RESPONSE / empty', () {
       expect(parseUpiResult('Status=NO_RESPONSE').outcome, UpiOutcome.noResponse);
       expect(parseUpiResult(null).outcome, UpiOutcome.noResponse);

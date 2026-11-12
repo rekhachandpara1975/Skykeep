@@ -93,6 +93,15 @@ class FakeApi extends Api {
   @override
   Future<List<Json>> cloudFiles(String? folderId) async => const [];
 
+  // ---------- UPI proof ----------
+  final proofs = <List<String>>[];
+  String? proofError;
+  @override
+  Future<Json> submitPaymentProof(String reference, String utr, {String? screenshotKey}) async {
+    proofs.add([reference, utr]);
+    return proofError == null ? {'status': 'review', 'reference': reference} : {'status': 'error', 'error': proofError};
+  }
+
   // ---------- play ----------
   List<Json> playCatalogList = const [];
   final playChoiceOrders = <List<String>>[];
@@ -140,6 +149,9 @@ class FakeUpi extends UpiLauncher {
     lastUri = uri;
     return result;
   }
+
+  @override
+  Future<List<int>?> qr(String uri, {int size = 600}) async => null;
 }
 
 Future<AppController> makeController(FakeApi api, {UpiLauncher? upi, PlayBilling? play}) async {

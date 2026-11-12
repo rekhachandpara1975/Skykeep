@@ -22,9 +22,9 @@ export async function clearUpi() {
 
 export async function savePaymentMode(f: FormData) {
   await requireAdmin(true);
-  await run('/admin/payments', 'Payment mode saved', async () => {
+  await run('/admin/payments', 'Saved', async () => {
     const sb = await supabaseServer();
-    return sb.from('payment_settings').update({ activation_mode: str(f, 'activation_mode'), enabled: str(f, 'enabled') === 'on' }).eq('id', true);
+    return sb.from('payment_settings').update({ enabled: str(f, 'enabled') === 'on' }).eq('id', true);
   });
 }
 

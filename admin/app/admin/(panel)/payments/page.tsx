@@ -4,20 +4,26 @@ import { Submit } from '@/components/ui';
 import { count, dateTime, paise, rupees } from '@/lib/format';
 import { clearUpi, orderAction, savePaymentMode, saveUpi } from './actions';
 
-const FILTERS = [['all', 'All'], ['verify_today', 'Activated today — verify against bank'], ['review', 'Needs review'],
-  ['pending', 'Pending'], ['paid', 'Paid'], ['failed', 'Failed'], ['cancelled', 'Cancelled'], ['rejected', 'Rejected'], ['revoked', 'Revoked']];
+const FILTERS = [['review', 'To verify'], ['all', 'All'], ['verify_today', 'Paid today — bank not ticked'],
+  ['pending', 'Waiting for payment'], ['expired', 'Expired'], ['paid', 'Paid'], ['failed', 'Failed'], ['cancelled', 'Cancelled'],
+  ['rejected', 'Rejected'], ['revoked', 'Revoked']];
 
 type Order = { id: string; created_at: string; email: string | null; plan_name: string; amount_paise: number; reference: string;
-  txn_id: string | null; utr: string | null; upi_id_used: string | null; status: string; raw_response: string | null;
-  bank_verified: boolean; paid_at: string | null; admin_note: string | null };
+  txn_id: string | null; utr: string | null; utr_source: string | null; upi_id_used: string | null; status: string; raw_response: string | null;
+  bank_verified: boolean; paid_at: string | null; admin_note: string | null; expires_at: string | null;
+  proof_screenshot_key: string | null; proof_submitted_at: string | null };
+type OrderEvent = { order_id: string; old_status: string | null; new_status: string; created_at: string; note: string | null };
+
+const SOURCE: Record<string, string> = { upi_app: 'from UPI app', buyer: 'typed by buyer', admin: 'entered by you', provider: 'bank webhook' };
 
 const STATUS_COLOR: Record<string, string> = { paid: 'bg-emerald-100 text-emerald-700', review: 'bg-amber-100 text-amber-800',
   submitted: 'bg-amber-100 text-amber-800', pending: 'bg-slate-100 text-slate-700', failed: 'bg-red-100 text-red-700',
+  expired: 'bg-slate-100 text-slate-500',
   rejected: 'bg-red-100 text-red-700', revoked: 'bg-red-100 text-red-700', cancelled: 'bg-slate-100 text-slate-500' };
 
 export default async function Payments({ searchParams }: { searchParams: Promise<{ f?: string }> }) {
   await requireAdmin(true);
-  const f = (await searchParams).f ?? 'all';
+  const f = (await searchParams).f ?? 'review';
   const sb = await supabaseServer();
   const [{ data: ps }, { data: orders = [] }, { data: sales }, { data: audit = [] }, { data: stats }] = await Promise.all([
     sb.from('payment_settings').select('*').single(),
@@ -27,6 +33,17 @@ export default async function Payments({ searchParams }: { searchParams: Promise
     sb.rpc('admin_stats'),
   ]);
   const live = !!(ps?.enabled && ps?.upi_id && ps?.payee_name);
+  const list = (orders ?? []) as Order[];
+  const [{ data: events = [] }, shots] = await Promise.all([
+    list.length ? sb.from('payment_order_events').select('order_id,old_status,new_status,created_at,note')
+      .in('order_id', list.map((o) => o.id)).order('created_at') : Promise.resolve({ data: [] as OrderEvent[] }),
+    Promise.all(list.filter((o) => o.proof_screenshot_key).map(async (o) => {
+      const { data } = await sb.storage.from('payment-proofs').createSignedUrl(o.proof_screenshot_key!, 600);
+      return [o.id, data?.signedUrl] as const;
+    })),
+  ]);
+  const shotUrl = new Map(shots);
+  const eventsFor = (id: string) => ((events ?? []) as OrderEvent[]).filter((e) => e.order_id === id);
 
   return (
     <>
@@ -50,14 +67,16 @@ export default async function Payments({ searchParams }: { searchParams: Promise
           <form action={clearUpi} className="mt-2"><Submit className="btn-danger" confirm="Clear the UPI ID? Payments will turn OFF in the app immediately.">Clear UPI ID</Submit></form>
         </section>
         <section className="card">
-          <h2 className="h2">Activation mode</h2>
-          <form action={savePaymentMode} className="space-y-2 text-sm">
-            <label className="flex gap-2"><input type="radio" name="activation_mode" value="instant" defaultChecked={ps?.activation_mode !== 'manual'} />
-              <span><b>Instant</b> — a valid UPI SUCCESS (right reference, new transaction id, under 2 h) activates the plan at once. After 3 automatic activations for one user in 24 h, the next goes to review. Check your bank daily.</span></label>
-            <label className="flex gap-2"><input type="radio" name="activation_mode" value="manual" defaultChecked={ps?.activation_mode === 'manual'} />
-              <span><b>Manual</b> — every reported payment goes to review; you approve after you see it in your bank.</span></label>
+          <h2 className="h2">How payments are verified</h2>
+          <ol className="mb-3 list-decimal space-y-1 pl-5 text-sm">
+            <li>The buyer pays in their UPI app. The app&apos;s answer is only a hint — no plan is ever activated from the phone.</li>
+            <li>Orders with a valid UPI answer, or a 12-digit UTR typed by the buyer (plus optional screenshot), appear under <b>To verify</b>.</li>
+            <li>Find the credit in your bank (same amount + UTR) → <b>Approve</b>. Not there → <b>Reject</b>. No UTR yet → type it from your bank and <b>Mark paid</b>.</li>
+            <li>Unpaid orders expire after 30 minutes. A buyer can still send proof for 24 hours.</li>
+          </ol>
+          <form action={savePaymentMode} className="flex items-center gap-3 text-sm">
             <label className="flex items-center gap-2"><input type="checkbox" name="enabled" defaultChecked={ps?.enabled} /> Payments enabled</label>
-            <Submit>Save mode</Submit>
+            <Submit>Save</Submit>
           </form>
         </section>
       </div>
@@ -73,24 +92,28 @@ export default async function Payments({ searchParams }: { searchParams: Promise
       </div>
       <div className="card mb-6 overflow-x-auto">
         <table className="table">
-          <thead><tr><th>Date</th><th>User</th><th>Plan</th><th>Amount</th><th>Reference</th><th>UTR / txn id</th><th>UPI ID used</th><th>Status</th><th>Actions</th></tr></thead>
+          <thead><tr><th>Date</th><th>User</th><th>Plan</th><th>Amount</th><th>Reference</th><th>UTR / proof</th><th>UPI ID used</th><th>Status</th><th>Actions</th></tr></thead>
           <tbody>
-            {((orders ?? []) as Order[]).map((o) => (
+            {list.map((o) => (
               <tr key={o.id}>
                 <td className="whitespace-nowrap text-xs">{dateTime(o.created_at)}</td>
                 <td className="text-xs">{o.email ?? 'deleted user'}</td>
                 <td>{o.plan_name}</td><td className="whitespace-nowrap">{paise(o.amount_paise)}</td>
                 <td className="font-mono text-xs">{o.reference}</td>
-                <td className="font-mono text-xs">{o.utr ?? o.txn_id ?? '—'}</td>
+                <td className="text-xs"><span className="font-mono">{o.utr ?? o.txn_id ?? '—'}</span>
+                  {o.utr && o.utr_source && <span className="block text-muted">{SOURCE[o.utr_source] ?? o.utr_source}</span>}
+                  {shotUrl.get(o.id) && <a href={shotUrl.get(o.id)} target="_blank" rel="noopener noreferrer" className="block text-blue-700 underline">Screenshot</a>}</td>
                 <td className="text-xs">{o.upi_id_used}</td>
                 <td><span className={`badge ${STATUS_COLOR[o.status] ?? ''}`}>{o.status}</span>{o.bank_verified && <span className="badge ml-1 bg-emerald-50 text-emerald-700">bank ✓</span>}
-                  {(o.raw_response || o.admin_note) && <details className="mt-1 text-xs"><summary className="cursor-pointer text-muted">Details</summary>
-                    {o.raw_response && <pre className="max-w-xs whitespace-pre-wrap break-all">{o.raw_response}</pre>}{o.admin_note && <p>Note: {o.admin_note}</p>}</details>}</td>
+                  <details className="mt-1 text-xs"><summary className="cursor-pointer text-muted">Details</summary>
+                    {o.raw_response && <pre className="max-w-xs whitespace-pre-wrap break-all">{o.raw_response}</pre>}{o.admin_note && <p>Note: {o.admin_note}</p>}
+                    <ul className="mt-1 space-y-0.5">{eventsFor(o.id).map((e, i) => (
+                      <li key={i}>{dateTime(e.created_at)}: {e.old_status ?? 'new'} → <b>{e.new_status}</b>{e.note ? ` (${e.note})` : ''}</li>))}</ul></details></td>
                 <td className="min-w-48">
                   <form action={orderAction} className="flex flex-wrap gap-1">
                     <input type="hidden" name="id" value={o.id} /><input type="hidden" name="f" value={f} />
-                    {['pending', 'submitted', 'review', 'failed'].includes(o.status) && <>
-                      {o.status === 'review' && o.txn_id && <Submit name="op" value="approve" className="btn-success" confirm={`Approve ${o.reference}? Check it is in your bank first.`}>Approve</Submit>}
+                    {['pending', 'submitted', 'review', 'failed', 'expired'].includes(o.status) && <>
+                      {['review', 'submitted', 'expired'].includes(o.status) && (o.utr || o.txn_id) && <Submit name="op" value="approve" className="btn-success" confirm={`Approve ${o.reference} (${paise(o.amount_paise)}, UTR ${o.utr ?? o.txn_id})? Check it is in your bank first.`}>Approve</Submit>}
                       <input name="utr" className="input w-32" placeholder="12-digit UTR" pattern="[0-9]{12}" aria-label="UTR" />
                       <Submit name="op" value="mark_paid" className="btn-success" confirm={`Mark ${o.reference} as paid?`}>Mark paid</Submit>
                       <Submit name="op" value="reject" className="btn-danger" confirm={`Reject ${o.reference}?`}>Reject</Submit>
@@ -103,7 +126,7 @@ export default async function Payments({ searchParams }: { searchParams: Promise
                 </td>
               </tr>
             ))}
-            {!orders?.length && <tr><td colSpan={9} className="text-muted">No orders.</td></tr>}
+            {!list.length && <tr><td colSpan={9} className="text-muted">No orders.</td></tr>}
           </tbody>
         </table>
       </div>

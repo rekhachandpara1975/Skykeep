@@ -59,9 +59,16 @@ select is((select raw_response from payment_orders where id = (select id from te
 update payment_orders set status = 'pending' where id = (select id from tests.o where k='a');
 select tests.as_user('00000000-0000-0000-0000-0000000000b2');
 select is(report_result((select id from tests.o where k='a'),
-  'txnId=ABC123456&responseCode=00&Status=SUCCESS&txnRef=' || (select ref from tests.o where k='a')) ->> 'status', 'paid', 'valid SUCCESS activates');
+  'txnId=ABC123456&responseCode=00&Status=SUCCESS&txnRef=' || (select ref from tests.o where k='a')) ->> 'status', 'review', 'valid SUCCESS -> verification, never activated by the phone');
+select is((my_status() ->> 'is_premium')::boolean, false, 'no premium before the owner verifies');
+reset role;
+select tests.as_user('00000000-0000-0000-0000-0000000000b1');
+select admin_approve_review((select id from tests.o where k='a'));
+select lives_ok($$ select admin_approve_review((select id from tests.o where k='a')) $$, 'approve twice is idempotent');
+reset role;
+select tests.as_user('00000000-0000-0000-0000-0000000000b2');
 select is(report_result((select id from tests.o where k='a'),
-  'txnId=ABC123456&Status=SUCCESS&txnRef=' || (select ref from tests.o where k='a')) ->> 'status', 'paid', 'double report is idempotent');
+  'txnId=ABC123456&Status=SUCCESS&txnRef=' || (select ref from tests.o where k='a')) ->> 'status', 'paid', 'double report after approval stays paid');
 select is((select count(*)::int from subscriptions), 1, 'exactly one subscription per order');
 select is((my_status() ->> 'is_premium')::boolean, true, 'ads buyer is premium');
 select is((my_status() ->> 'quota_bytes')::bigint, 2199023255552::bigint, 'plan -> 2 TB');
@@ -78,10 +85,10 @@ insert into tests.o select 'c', (j->>'order_id')::uuid, j->>'reference' from (se
 reset role;
 select isnt((select id from tests.o where k='c'), (select id from tests.o where k='b'), 'submitted-success order not reused, new order made');
 select is((select status from payment_orders where id = (select id from tests.o where k='b')), 'submitted', 'order that reported SUCCESS is never auto-cancelled');
-update payment_orders set created_at = now() - interval '3 hours' where id = (select id from tests.o where k='c');
+update payment_orders set created_at = now() - interval '25 hours' where id = (select id from tests.o where k='c');
 select tests.as_user('00000000-0000-0000-0000-0000000000b2');
 select is(report_result((select id from tests.o where k='c'),
-  'txnId=OLD9999999&Status=SUCCESS&txnRef=' || (select ref from tests.o where k='c')) ->> 'status', 'pending', 'order older than 2h not auto-activated');
+  'txnId=OLD9999999&Status=SUCCESS&txnRef=' || (select ref from tests.o where k='c')) ->> 'status', 'pending', 'order older than 24h not sent to verification');
 reset role;
 
 -- FAILURE
@@ -118,16 +125,7 @@ select lives_ok($$ select admin_confirm_bank((select id from tests.o where k='d'
 select lives_ok($$ select admin_revoke_order((select id from tests.o where k='d')) $$, 'revoke');
 select is((select status from subscriptions where order_id = (select id from tests.o where k='d')), 'revoked', 'revoke ends subscription');
 reset role;
-update payment_settings set activation_mode = 'instant';
-
--- daily cap: 3 automatic activations per user per 24h -> review
-update payment_orders set auto_activated = true, paid_at = now() where id in (select id from tests.o where k in ('a','f'));
-update payment_orders set auto_activated = true where id = (select id from tests.o where k = 'd');
-select tests.as_user('00000000-0000-0000-0000-0000000000b2');
-insert into tests.o select 'g', (j->>'order_id')::uuid, j->>'reference' from (select create_order('00000000-0000-0000-0000-0000000000f1') j) x;
-select is(report_result((select id from tests.o where k='g'),
-  'txnId=CAP1234567&Status=SUCCESS&txnRef=' || (select ref from tests.o where k='g')) ->> 'status', 'review', '>=3 auto activations in 24h -> review');
-reset role;
+select throws_ok($$ update payment_settings set activation_mode = 'instant' $$, '23514', null, 'instant activation from the phone is not allowed');
 
 -- UPI change cancels old pending; clear turns payments off
 select tests.as_user('00000000-0000-0000-0000-0000000000b3');
@@ -148,7 +146,12 @@ update payment_orders set status = 'pending' where id = (select id from payment_
 select tests.as_user('00000000-0000-0000-0000-0000000000b3');
 insert into tests.o select 'i', (j->>'order_id')::uuid, j->>'reference' from (select create_order('00000000-0000-0000-0000-0000000000f2') j) x;
 select is(report_result((select id from tests.o where k='i'),
-  'txnId=ORG1234567&Status=SUCCESS&txnRef=' || (select ref from tests.o where k='i')) ->> 'status', 'paid', 'organic buyer paid');
+  'txnId=ORG1234567&Status=SUCCESS&txnRef=' || (select ref from tests.o where k='i')) ->> 'status', 'review', 'organic buyer -> verification');
+reset role;
+select tests.as_user('00000000-0000-0000-0000-0000000000b1');
+select admin_approve_review((select id from tests.o where k='i'));
+reset role;
+select tests.as_user('00000000-0000-0000-0000-0000000000b3');
 select is(my_status() ->> 'access_status', 'pending', 'organic buyer -> access pending');
 select is((my_status() ->> 'is_premium')::boolean, true, 'paid mode: organic buyer gets premium items with the plan');
 select is((my_status() ->> 'has_ads_access')::boolean, false, 'organic buyer has no ads content until approved');

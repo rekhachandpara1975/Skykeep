@@ -30,7 +30,7 @@ insert into plans (id, code, name, price_inr, duration_days) values
   ('00000000-0000-0000-0000-0000000002f1', 'p_monthly', 'Monthly', 118, 30),
   ('00000000-0000-0000-0000-0000000002f2', 'p_nop', 'Not on Play', 50, 30);
 insert into play_products (product_id, plan_id, base_plan_id) values ('skykeep_monthly', '00000000-0000-0000-0000-0000000002f1', 'monthly');
-update payment_settings set upi_id = 'shop@okaxis', payee_name = 'Shop', activation_mode = 'instant';
+update payment_settings set upi_id = 'shop@okaxis', payee_name = 'Shop';
 
 -- ===== OFF by default =====
 select tests.as_user('00000000-0000-0000-0000-0000000002a2');
@@ -66,7 +66,10 @@ insert into tests.o select 'u', (j->>'order_id')::uuid, j->>'reference'
 select is((select count(*)::int from play_purchases where kind = 'alternative'), 1, 'external token stored with the order');
 select is((select buyer_state from play_purchases where kind = 'alternative'), 'MH', 'buyer state stored');
 select is(report_result((select id from tests.o where k = 'u'),
-  'txnId=PLAYUPI1234&Status=SUCCESS&txnRef=' || (select ref from tests.o where k = 'u')) ->> 'status', 'paid', 'UPI choice order paid by the normal rules');
+  'txnId=PLAYUPI1234&Status=SUCCESS&txnRef=' || (select ref from tests.o where k = 'u')) ->> 'status', 'review', 'UPI choice order verified by the normal rules');
+reset role;
+select tests.as_user('00000000-0000-0000-0000-0000000002a1');
+select admin_approve_review((select id from tests.o where k = 'u'));
 reset role;
 select tests.as_service();
 select is((select count(*)::int from play_pending_reports()), 1, 'paid UCB order waits for the Google report');

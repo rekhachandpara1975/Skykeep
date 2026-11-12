@@ -14,8 +14,12 @@ export default async function Subscribe({ searchParams }: { searchParams: Promis
   const sp = await searchParams;
   const freeIds = new Set((sp.free ?? '').split(',').filter(Boolean));
   const paused = sp.paused === '1';
-  const { data: plans = [] } = await supabasePublic().from('plans')
-    .select('id,name,price_inr,duration_days,perks,badge').eq('active', true).order('position');
+  const sb = supabasePublic();
+  const [{ data: plans = [] }, { data: offers }] = await Promise.all([
+    sb.from('plans').select('id,name,price_inr,duration_days,perks,badge').eq('active', true).order('position'),
+    sb.rpc('plan_offers'),
+  ]);
+  const payee: string | null = offers?.payee_name ?? null;
 
   return (
     <main className="min-h-screen bg-night px-4 py-6 text-slate-100">
@@ -35,11 +39,13 @@ export default async function Subscribe({ searchParams }: { searchParams: Promis
                 <span className="ml-2 text-sm text-slate-400">{durationLabel(p.duration_days).slice(2)}</span></p>
               <ul className="mt-2 space-y-1 text-sm text-slate-300">{p.perks.map((x: string) => <li key={x}>✓ {x}</li>)}</ul>
               <BuyButton planId={p.id} label={free ? 'Activate for free' : `Pay ${rupees(p.price_inr)} with UPI`} disabled={paused && !free} price={p.price_inr} />
+              {!free && payee && <p className="mt-2 text-center text-xs text-slate-400">You will pay {rupees(p.price_inr)} to <b className="text-slate-200">{payee}</b> from your UPI app.</p>}
             </div>
           );
         })}
         {!plans?.length && <p className="text-center text-slate-400">No plans available right now.</p>}
       </div>
+      <p className="mx-auto mt-6 max-w-md text-center text-xs text-slate-400">UPI only — no cards or wallets. After paying, your plan turns on once we verify the payment with the bank (usually within a few hours).</p>
       {sp.app !== '1' && <p className="mt-6 text-center text-sm text-slate-400">Open this page from the {APP_NAME} app to buy.</p>}
     </main>
   );

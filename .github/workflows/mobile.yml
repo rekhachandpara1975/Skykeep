@@ -55,6 +55,10 @@ jobs:
             echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/release.jks"
             echo "ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
           fi
+      - name: Kotlin unit tests (UPI response parser)
+        run: |
+          flutter build apk --config-only --flavor direct
+          cd android && ./gradlew --no-daemon :app:testDirectDebugUnitTest
       - name: Build direct APK, ads APK, Play AAB
         env:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}

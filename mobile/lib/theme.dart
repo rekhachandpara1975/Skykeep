@@ -15,6 +15,9 @@ class C {
   static const success = Color(0xFF34D399);
   static const warning = Color(0xFFFBBF24);
   static const danger = Color(0xFFF87171);
+  static const successText = success;
+  static const warningText = warning;
+  static const dangerText = danger;
   static const gradient = LinearGradient(colors: [primary, accent], begin: Alignment.topLeft, end: Alignment.bottomRight);
 }
 

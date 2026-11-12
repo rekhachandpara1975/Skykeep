@@ -4,6 +4,7 @@ import 'package:skykeep/app_state.dart';
 import 'package:skykeep/screens/checkout.dart';
 import 'package:skykeep/services/premium_web.dart';
 import 'package:skykeep/services/upi.dart';
+import 'package:skykeep/theme.dart';
 
 import 'fakes.dart';
 
@@ -62,7 +63,7 @@ void main() {
     await t.tap(find.text('buy'));
     await t.pumpAndSettle();
     expect(c.queue.items.single['raw'], 'Status=FAILURE');
-    expect(find.text('Waiting for confirmation…'), findsOneWidget);
+    expect(find.text('Waiting for your payment'), findsOneWidget);
     // server back (app resumed later; backoff elapsed)
     api.reportFails = false;
     final items = c.queue.items..first['next_at'] = 0;
@@ -94,13 +95,50 @@ void main() {
       ('review', 'Payment received, being verified'),
       ('failed', 'Payment failed or cancelled'),
       ('cancelled', 'Payment failed or cancelled'),
-      ('pending', 'Waiting for confirmation…'),
+      ('pending', 'Waiting for your payment'),
+      ('expired', 'This order expired'),
+      ('rejected', 'Payment could not be verified'),
     ]) {
       await pumpApp(t, FakeApi(), Scaffold(body: PaymentStatusView(status: s, onCheck: () {}, onTryAgain: () {})));
       expect(find.text(text), findsOneWidget, reason: s);
       if (s == 'failed') expect(find.text('Try again'), findsOneWidget);
       if (s == 'pending') expect(find.text('Check again'), findsOneWidget);
     }
+  });
+
+  testWidgets('pending: "I have paid" + QR fallback offered; paid: no proof button', (t) async {
+    await pumpApp(t, FakeApi(), Scaffold(body: PaymentStatusView(status: 'pending', reference: 'SK1', onCheck: () {}, onTryAgain: () {},
+        onIHavePaid: () {}, onPayWithQr: () {})));
+    expect(find.text('I have paid'), findsOneWidget);
+    expect(find.text('Pay with QR code'), findsOneWidget);
+    await pumpApp(t, FakeApi(), Scaffold(body: PaymentStatusView(status: 'paid', reference: 'SK1', onCheck: () {}, onTryAgain: () {},
+        onIHavePaid: () {}, onPayWithQr: () {})));
+    expect(find.text('I have paid'), findsNothing);
+  });
+
+  testWidgets('verifying with UTR: no proof button; expired: proof + try again', (t) async {
+    await pumpApp(t, FakeApi(), Scaffold(body: PaymentStatusView(status: 'review', utr: '123456789012', onCheck: () {}, onTryAgain: () {}, onIHavePaid: () {})));
+    expect(find.text('I have paid'), findsNothing);
+    expect(find.text('123456789012'), findsOneWidget);
+    await pumpApp(t, FakeApi(), Scaffold(body: PaymentStatusView(status: 'expired', onCheck: () {}, onTryAgain: () {}, onIHavePaid: () {})));
+    expect(find.text('I have paid'), findsOneWidget);
+    expect(find.text('Try again'), findsOneWidget);
+  });
+
+  testWidgets('UTR sheet: 12 digits required, server error shown, success closes', (t) async {
+    final api = FakeApi();
+    await pumpApp(t, api, const Scaffold(body: PaymentProofSheet(reference: 'SK20261109ABCDEF12')));
+    final send = find.widgetWithText(GradientButton, 'Send for verification');
+    await t.enterText(find.byType(TextField), '12345');
+    await t.pump();
+    expect(t.widget<GradientButton>(send).onPressed, isNull, reason: 'button disabled until 12 digits');
+    api.proofError = 'this UTR was already used for another payment';
+    await t.enterText(find.byType(TextField), '1234 5678 9012');
+    await t.pump();
+    await t.tap(send);
+    await t.pumpAndSettle();
+    expect(find.text('This UTR was already used for another payment. Check the number.'), findsOneWidget);
+    expect(api.proofs.single, ['SK20261109ABCDEF12', '123456789012']);
   });
 
   test('controller keeps AppScope type', () => expect(AppScope, isNotNull));
