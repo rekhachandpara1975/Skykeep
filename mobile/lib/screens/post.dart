@@ -49,10 +49,32 @@ class _PostScreenState extends State<PostScreen> {
   }
 
   int get _at => widget.queue.indexOf(widget.postId);
-  void _go(int step) {
-    final i = _at + step;
-    if (_at < 0 || i < 0 || i >= widget.queue.length) return;
-    Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => PostScreen(postId: widget.queue[i], queue: widget.queue)));
+
+  // The next / previous buttons play through the list the post was opened from; when it runs out,
+  // "next" continues into the suggested videos so the user can keep watching.
+  String? get _nextId {
+    if (_at >= 0 && _at < widget.queue.length - 1) return widget.queue[_at + 1];
+    return _more.isNotEmpty ? _more.first['id'] as String? : null;
+  }
+
+  String? get _prevId => _at > 0 ? widget.queue[_at - 1] : null;
+
+  void _open(String id, List<String> queue) =>
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => PostScreen(postId: id, queue: queue)));
+
+  void _next() {
+    final id = _nextId;
+    if (id == null) return;
+    if (_at >= 0 && _at < widget.queue.length - 1) {
+      _open(id, widget.queue);
+    } else {
+      _open(id, [for (final p in _more) p['id'] as String]); // keep playing through the suggestions
+    }
+  }
+
+  void _previous() {
+    final id = _prevId;
+    if (id != null) _open(id, widget.queue);
   }
 
   Future<void> _report() async {
@@ -119,8 +141,8 @@ class _PostScreenState extends State<PostScreen> {
                   const SizedBox(height: 16),
                   for (final it in items) Padding(padding: const EdgeInsets.only(bottom: 16), child: MediaItem(
                       item: Json.from(it as Map), title: _post!['title'] as String?,
-                      onNext: _at >= 0 && _at < widget.queue.length - 1 ? () => _go(1) : null,
-                      onPrevious: _at > 0 ? () => _go(-1) : null)),
+                      onNext: _nextId != null ? _next : null,
+                      onPrevious: _prevId != null ? _previous : null)),
                   if (_more.isNotEmpty) _MoreToWatch(posts: _more),
                 ]),
     );
