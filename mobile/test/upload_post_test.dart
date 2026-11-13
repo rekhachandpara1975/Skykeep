@@ -26,7 +26,7 @@ class _FakeThumbs extends Thumbs {
   }
 }
 
-PlatformFile _file(String name, {int size = 3, String? path}) => PlatformFile(name: name, size: size, bytes: Uint8List(size), path: path ?? '/tmp/$name');
+PickedMedia _file(String name, {int size = 3, String? path}) => PickedMedia(name: name, bytes: Uint8List(size), path: path ?? '/tmp/$name');
 
 void main() {
   Future<void> post(WidgetTester t) async {
@@ -62,7 +62,7 @@ void main() {
     await pumpApp(t, api, UploadPostScreen(channelId: 'c1', picker: (type) async {
       picks.add(type);
       return switch (type) {
-        FileType.image => PlatformFile(name: 'cover.png', size: _png.length, bytes: _png),
+        FileType.image => PickedMedia(name: 'cover.png', bytes: _png),
         FileType.video => _file('trailer.mp4', size: 5),
         _ => _file('movie.mp4', size: 9),
       };
@@ -93,7 +93,7 @@ void main() {
   testWidgets('a photo is its own thumbnail and nothing is generated; posting needs a file', (t) async {
     final api = FakeApi();
     final thumbs = _FakeThumbs(null);
-    await pumpApp(t, api, UploadPostScreen(channelId: 'c1', picker: (type) async => PlatformFile(name: 'pic.jpg', size: _png.length, bytes: _png)), thumbs: thumbs);
+    await pumpApp(t, api, UploadPostScreen(channelId: 'c1', picker: (type) async => PickedMedia(name: 'pic.jpg', bytes: _png)), thumbs: thumbs);
     await post(t);
     expect(api.uploads, isEmpty); // nothing chosen yet
     await t.tap(find.text('Choose'));

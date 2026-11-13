@@ -10,8 +10,23 @@ import '../theme.dart';
 import '../widgets/common.dart';
 import 'channels.dart' show mimeFor;
 
-typedef MediaPicker = Future<PlatformFile?> Function(FileType type);
-Future<PlatformFile?> _pick(FileType type) => FilePicker.pickFile(type: type);
+/// A chosen file, already read into memory.
+class PickedMedia {
+  const PickedMedia({required this.name, required this.bytes, this.path});
+  final String name;
+  final Uint8List bytes;
+  final String? path;
+  int get size => bytes.length;
+  String get extension => name.contains('.') ? name.split('.').last : '';
+}
+
+typedef MediaPicker = Future<PickedMedia?> Function(FileType type);
+
+Future<PickedMedia?> _pick(FileType type) async {
+  final f = await FilePicker.pickFile(type: type);
+  if (f == null) return null;
+  return PickedMedia(name: f.name, bytes: Uint8List.fromList(await f.readAsBytes()), path: f.path);
+}
 
 /// New post: media + title, an optional thumbnail (auto-cut from the video when left empty),
 /// an optional trailer that plays before the full video, and "Premium only".
@@ -26,7 +41,7 @@ class UploadPostScreen extends StatefulWidget {
 class _UploadPostScreenState extends State<UploadPostScreen> {
   final _title = TextEditingController();
   final _desc = TextEditingController();
-  PlatformFile? _media, _trailer, _customThumb;
+  PickedMedia? _media, _trailer, _customThumb;
   VideoFrame? _auto;
   bool _busy = false, _premium = false, _cutting = false;
 
@@ -61,8 +76,6 @@ class _UploadPostScreenState extends State<UploadPostScreen> {
     if (f != null && mounted) setState(() => _trailer = f);
   }
 
-  Future<Uint8List?> _bytes(PlatformFile f) async => f.bytes ?? await f.readAsBytes();
-
   Future<void> _post() async {
     final media = _media;
     if (media == null) { toast(context, 'Choose a video or photo first'); return; }
@@ -74,10 +87,10 @@ class _UploadPostScreenState extends State<UploadPostScreen> {
       await app.api.uploadPost(
         channelId: widget.channelId, title: _title.text.trim(),
         description: _desc.text.trim().isEmpty ? null : _desc.text.trim(),
-        fileName: media.name, bytes: await _bytes(media) ?? const [], mime: mimeFor(media.extension),
-        thumbBytes: thumb != null ? await _bytes(thumb) : _auto?.jpeg,
+        fileName: media.name, bytes: media.bytes, mime: mimeFor(media.extension),
+        thumbBytes: thumb != null ? thumb.bytes : _auto?.jpeg,
         thumbMime: thumb != null ? mimeFor(thumb.extension) : 'image/jpeg',
-        trailerBytes: _trailer != null ? await _bytes(_trailer!) : null,
+        trailerBytes: _trailer?.bytes,
         trailerName: _trailer?.name, trailerMime: mimeFor(_trailer?.extension),
         premium: _premium, durationS: _auto == null || _auto!.duration == Duration.zero ? null : _auto!.duration.inSeconds,
       );
@@ -92,12 +105,11 @@ class _UploadPostScreenState extends State<UploadPostScreen> {
   Widget _thumbPreview() {
     final Widget inner;
     if (_customThumb != null) {
-      final b = _customThumb!.bytes;
-      inner = b != null ? Image.memory(b, fit: BoxFit.cover) : const Icon(Icons.image_outlined, size: 40, color: C.muted);
+      inner = Image.memory(_customThumb!.bytes, fit: BoxFit.cover);
     } else if (_auto != null) {
       inner = Image.memory(_auto!.jpeg, fit: BoxFit.cover);
-    } else if (_isImage && _media?.bytes != null) {
-      inner = Image.memory(_media!.bytes!, fit: BoxFit.cover);
+    } else if (_isImage) {
+      inner = Image.memory(_media!.bytes, fit: BoxFit.cover);
     } else {
       inner = _cutting ? const Center(child: CircularProgressIndicator()) : const Icon(Icons.movie_outlined, size: 40, color: C.muted);
     }
