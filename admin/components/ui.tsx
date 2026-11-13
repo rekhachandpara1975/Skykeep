@@ -21,8 +21,17 @@ export function Submit({ children, confirm, className = 'btn-primary', name, val
 }) {
   const { pending } = useFormStatus();
   return (
-    <button type="submit" name={name} value={value} disabled={pending} className={className}
-      onClick={(e) => { if (confirm && !window.confirm(confirm)) e.preventDefault(); }}>
+    <button type="submit" disabled={pending} className={className}
+      onClick={(e) => {
+        if (confirm && !window.confirm(confirm)) { e.preventDefault(); return; }
+        // Carry the clicked button's choice in a hidden field instead of relying on the browser/React to send the
+        // submitter's name/value, so "Approve" can never arrive as a missing value.
+        const form = e.currentTarget.form;
+        if (!form || !name) return;
+        let h = form.querySelector<HTMLInputElement>(`input[type="hidden"][data-choice="${name}"]`);
+        if (!h) { h = document.createElement('input'); h.type = 'hidden'; h.name = name; h.dataset.choice = name; form.appendChild(h); }
+        h.value = value ?? '';
+      }}>
       {pending ? '…' : children}
     </button>
   );
