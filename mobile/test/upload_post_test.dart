@@ -96,6 +96,8 @@ void main() {
     await pumpApp(t, api, UploadPostScreen(channelId: 'c1', picker: (type) async => PickedMedia(name: 'pic.jpg', bytes: _png)), thumbs: thumbs);
     await post(t);
     expect(api.uploads, isEmpty); // nothing chosen yet
+    await t.pump(const Duration(seconds: 6)); // let the snackbar go away so it does not cover the button
+    await t.pumpAndSettle();
     await t.drag(find.byType(Scrollable).first, const Offset(0, 3000));
     await t.pumpAndSettle();
     await t.tap(find.text('Choose'));
