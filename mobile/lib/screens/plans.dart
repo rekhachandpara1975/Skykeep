@@ -153,7 +153,7 @@ class PlanRow extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                           decoration: BoxDecoration(color: selected ? const Color(0x33FFFFFF) : C.primarySoft, borderRadius: BorderRadius.circular(20)),
-                          child: Text(badge, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: selected ? Colors.white : C.accent)),
+                          child: Text(badge, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: selected ? Colors.white : C.primary)),
                         ),
                     ]),
                     const SizedBox(height: 4),
