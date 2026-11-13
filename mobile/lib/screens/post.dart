@@ -27,6 +27,7 @@ class PostScreen extends StatefulWidget {
 
 class _PostScreenState extends State<PostScreen> {
   Json? _post;
+  List<Json> _more = const [];
   bool _loading = true;
 
   @override
@@ -36,10 +37,15 @@ class _PostScreenState extends State<PostScreen> {
   }
 
   Future<void> _load() async {
+    final api = AppScope.read(context).api;
     try {
-      _post = await AppScope.read(context).api.post(widget.postId);
+      _post = await api.post(widget.postId);
     } catch (_) {}
     if (mounted) setState(() => _loading = false);
+    try {
+      final more = await api.suggestedPosts(widget.postId, excludeChannelId: _post?['channel_id'] as String?);
+      if (mounted) setState(() => _more = more);
+    } catch (_) {}
   }
 
   int get _at => widget.queue.indexOf(widget.postId);
@@ -115,7 +121,51 @@ class _PostScreenState extends State<PostScreen> {
                       item: Json.from(it as Map), title: _post!['title'] as String?,
                       onNext: _at >= 0 && _at < widget.queue.length - 1 ? () => _go(1) : null,
                       onPrevious: _at > 0 ? () => _go(-1) : null)),
+                  if (_more.isNotEmpty) _MoreToWatch(posts: _more),
                 ]),
+    );
+  }
+}
+
+/// "More to watch": public videos from other channels, shown under the player for every viewer.
+class _MoreToWatch extends StatelessWidget {
+  const _MoreToWatch({required this.posts});
+  final List<Json> posts;
+  @override
+  Widget build(BuildContext context) {
+    final queue = [for (final p in posts) p['id'] as String];
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        const Text('More to watch', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18)),
+        const SizedBox(height: 12),
+        SizedBox(height: 190, child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          itemCount: posts.length,
+          separatorBuilder: (_, _) => const SizedBox(width: 12),
+          itemBuilder: (context, i) {
+            final p = posts[i];
+            final its = (p['post_items'] as List?) ?? const [];
+            final thumb = its.isEmpty ? null : (its.first as Map)['thumbnail_key'] as String?;
+            final premium = its.any((e) => (e as Map)['is_premium'] == true);
+            final channel = (p['channels'] as Map?)?['name'] as String?;
+            return SizedBox(width: 130, child: InkWell(
+              borderRadius: BorderRadius.circular(16),
+              onTap: () => Navigator.pushReplacement(context, MaterialPageRoute(
+                  builder: (_) => PostScreen(postId: p['id'] as String, queue: queue))),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Expanded(child: ClipRRect(borderRadius: BorderRadius.circular(16),
+                    child: AspectRatio(aspectRatio: .72, child: MediaThumb(keyName: thumb, premium: premium)))),
+                const SizedBox(height: 6),
+                Text(p['title'] as String? ?? '', maxLines: 2, overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, height: 1.15)),
+                if (channel != null)
+                  Text(channel, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: C.muted, fontSize: 11)),
+              ]),
+            ));
+          },
+        )),
+      ]),
     );
   }
 }

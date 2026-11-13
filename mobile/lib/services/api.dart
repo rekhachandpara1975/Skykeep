@@ -139,6 +139,16 @@ class Api {
 
   static const _postCols = 'id,title,description,created_at,channel_id,channels!inner(id,name,category,icon_url,members_count),post_items(thumbnail_key,is_premium)';
 
+  /// "More to watch" under a video: newest public posts from other channels, visible to the viewer
+  /// (RLS post_visible already enforces the organic / ads rules, so both kinds of user get suggestions).
+  Future<List<Json>> suggestedPosts(String excludePostId, {String? excludeChannelId, int limit = 10}) async {
+    var q = db.from('posts').select(_postCols).neq('id', excludePostId);
+    if (excludeChannelId != null) q = q.neq('channel_id', excludeChannelId);
+    final blocked = await blockedChannelIds();
+    if (blocked.isNotEmpty) q = q.not('channel_id', 'in', '(${blocked.join(',')})');
+    return List<Json>.from(await q.order('created_at', ascending: false).limit(limit));
+  }
+
   /// Feed › Following: newest posts from channels the user joined.
   Future<List<Json>> followingPosts({int page = 0}) async {
     if (user == null || isGuest) return const [];
