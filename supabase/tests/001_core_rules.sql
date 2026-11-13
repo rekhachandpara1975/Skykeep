@@ -96,6 +96,7 @@ select admin_review_channel('00000000-0000-0000-0000-00000000c010', true, 'organ
 reset role;
 select tests.as_user('00000000-0000-0000-0000-0000000000a3');
 select throws_ok($$ insert into posts (channel_id, title, status) values ('00000000-0000-0000-0000-00000000c010', 'mine', 'published') $$, '42501', null, 'creator without a plan cannot upload');
+select lives_ok($$ insert into channels (name, created_by) values ('Fresh channel', '00000000-0000-0000-0000-0000000000a3') returning id $$, 'a member can create a channel and read it back (INSERT ... RETURNING)');
 reset role;
 insert into subscriptions (user_id, kind, source, ends_at) values ('00000000-0000-0000-0000-0000000000a3', 'paid', 'upi_app', now() + interval '30 days');
 select tests.as_user('00000000-0000-0000-0000-0000000000a3');
