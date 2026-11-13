@@ -133,9 +133,14 @@ class _ExploreScreenState extends State<ExploreScreen> {
         Text('New posts from channels will show up here.', style: TextStyle(color: C.muted)),
       ]))];
     } else {
+      final queue = [for (final x in _posts) x['id'] as String];
       feed = [
-        for (final p in _posts) Padding(padding: const EdgeInsets.only(bottom: 12), child: PostCard(post: p, queue: [for (final x in _posts) x['id'] as String])),
-        if (_more) const Skeleton(height: 220),
+        GridView.count(
+          shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
+          crossAxisCount: 3, mainAxisSpacing: 14, crossAxisSpacing: 10, childAspectRatio: .5,
+          children: [for (final p in _posts) PosterTile(post: p, queue: queue)],
+        ),
+        if (_more) const Padding(padding: EdgeInsets.only(top: 12), child: Skeleton(height: 120)),
       ];
     }
 
@@ -182,7 +187,7 @@ class _CloudSummary extends StatelessWidget {
             const SizedBox(height: 8),
             ClipRRect(borderRadius: BorderRadius.circular(6), child: LinearProgressIndicator(
                 value: (status.usedBytes / status.quotaBytes).clamp(0.0, 1.0), minHeight: 6,
-                backgroundColor: Colors.white, color: C.primary)),
+                backgroundColor: C.surface2, color: C.primary)),
           ],
           const SizedBox(height: 14),
           FilledButton.icon(
@@ -198,7 +203,7 @@ class _CloudSummary extends StatelessWidget {
         Container(
           width: 84, height: 84,
           decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle,
-              boxShadow: [BoxShadow(color: Color(0x1F2563EB), blurRadius: 18, offset: Offset(0, 6))]),
+              boxShadow: [BoxShadow(color: Color(0x33E21B1B), blurRadius: 18, offset: Offset(0, 6))]),
           alignment: Alignment.center,
           child: const CloudMark(size: 54),
         ),
@@ -223,6 +228,29 @@ class _RecentFile extends StatelessWidget {
       subtitle: Text('${formatBytes(file['size_bytes'] as num? ?? 0)} · ${timeAgo(DateTime.tryParse(file['created_at']?.toString() ?? '')?.toLocal())}',
           style: const TextStyle(color: C.muted, fontSize: 12)),
       onTap: () => HomeShell.of(context)?.go(HomeShellState.cloudTab),
+    );
+  }
+}
+
+/// Portrait poster with the title underneath (Explore grid).
+class PosterTile extends StatelessWidget {
+  const PosterTile({super.key, required this.post, this.queue = const []});
+  final Json post;
+  final List<String> queue;
+  @override
+  Widget build(BuildContext context) {
+    final items = (post['post_items'] as List?) ?? const [];
+    final thumb = items.isEmpty ? null : (items.first as Map)['thumbnail_key'] as String?;
+    final premium = items.any((e) => (e as Map)['is_premium'] == true);
+    return InkWell(
+      borderRadius: BorderRadius.circular(20),
+      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => PostScreen(postId: post['id'] as String, queue: queue))),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Expanded(child: ClipRRect(borderRadius: BorderRadius.circular(20), child: MediaThumb(keyName: thumb, premium: premium))),
+        const SizedBox(height: 6),
+        Text(post['title'] as String? ?? '', maxLines: 2, overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, height: 1.2)),
+      ]),
     );
   }
 }
