@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
@@ -94,6 +95,7 @@ class _UploadPostScreenState extends State<UploadPostScreen> {
         trailerName: _trailer?.name, trailerMime: mimeFor(_trailer?.extension),
         premium: _premium, durationS: _auto == null || _auto!.duration == Duration.zero ? null : _auto!.duration.inSeconds,
       );
+      unawaited(app.refresh()); // the storage card shows the new upload straight away
       if (!mounted) return;
       toast(context, 'Posted');
       Navigator.pop(context, true);

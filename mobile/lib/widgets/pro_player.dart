@@ -121,6 +121,7 @@ class _ProPlayerState extends State<ProPlayer> with WidgetsBindingObserver {
     if (_c == null || !_c!.value.isInitialized) return;
     if (o == Orientation.landscape && !_fullscreen) {
       if (DateTime.now().isBefore(_suppressAutoUntil)) return; // just exited: don't snap back in
+      if (ModalRoute.of(context)?.isCurrent != true) return; // this video's page isn't on screen
       _enterFullscreen(auto: true);
     } else if (o == Orientation.portrait && _fullscreen && _autoFs) {
       _exitFullscreen();
@@ -171,8 +172,10 @@ class _ProPlayerState extends State<ProPlayer> with WidgetsBindingObserver {
     }
   }
 
+  bool _switching = false; // trailer → full video handover in progress
+
   void _onTick(VideoPlayerController c) {
-    if (!mounted || c != _c) return;
+    if (!mounted || c != _c || _switching) return;
     final v = c.value;
     // signed URL expired mid-stream → refresh and continue (a few times, then show Retry)
     if (v.hasError) {
@@ -195,10 +198,15 @@ class _ProPlayerState extends State<ProPlayer> with WidgetsBindingObserver {
   }
 
   Future<void> _skipTrailer() async {
-    if (!_onTrailer) return;
+    if (!_onTrailer || _switching) return;
+    _switching = true;
     _stage = 1;
     _ended = false;
-    await _open(autoPlay: true);
+    try {
+      await _open(autoPlay: true);
+    } finally {
+      _switching = false;
+    }
   }
 
   // ---------------- controls ----------------
@@ -305,9 +313,12 @@ class _ProPlayerState extends State<ProPlayer> with WidgetsBindingObserver {
     if (_fullscreen || _c == null) return;
     _autoFs = auto;
     _set(() => _fullscreen = true);
-    // Button: rotate the app to landscape ourselves. Auto: the device already rotated, so just
-    // keep both landscape sides allowed so it follows the phone.
-    await SystemChrome.setPreferredOrientations(const [DeviceOrientation.landscapeLeft, DeviceOrientation.landscapeRight]);
+    // Button: rotate the app to landscape ourselves. Auto: the phone is already in landscape — leave
+    // the orientation free, because locking it would stop the phone from rotating back to portrait
+    // and the automatic exit would never fire.
+    if (!auto) {
+      await SystemChrome.setPreferredOrientations(const [DeviceOrientation.landscapeLeft, DeviceOrientation.landscapeRight]);
+    }
     await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
     if (!mounted) return;
     await Navigator.of(context).push(PageRouteBuilder<void>(
