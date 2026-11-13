@@ -53,7 +53,7 @@ void main() {
     await t.tap(find.text('Following'));
     await t.pumpAndSettle();
     expect(find.text('Nature Vibes'), findsOneWidget);
-    expect(find.text('2 hours ago'), findsOneWidget);
+    expect(find.text('2 hours ago'), findsNothing); // upload time is no longer shown on posts
   });
 
   testWidgets('Feed: guest gets a log-in prompt on Following', (t) async {

@@ -43,7 +43,9 @@ class _PostScreenState extends State<PostScreen> {
     } catch (_) {}
     if (mounted) setState(() => _loading = false);
     try {
-      final more = await api.suggestedPosts(widget.postId, excludeChannelId: _post?['channel_id'] as String?);
+      // Suggest any other video (same channel included) — excluding only this post, so a single-channel
+      // app still shows "More to watch".
+      final more = await api.suggestedPosts(widget.postId);
       if (mounted) setState(() => _more = more);
     } catch (_) {}
   }

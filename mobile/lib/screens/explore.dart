@@ -279,8 +279,7 @@ class PostCard extends StatelessWidget {
                 Text(post['title'] as String? ?? '', maxLines: 2, overflow: TextOverflow.ellipsis,
                     style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
                 if (channel != null)
-                  Text([channel['name'] ?? '', timeAgo(DateTime.tryParse(post['created_at']?.toString() ?? '')?.toLocal())]
-                      .where((x) => '$x'.isNotEmpty).join(' · '),
+                  Text('${channel['name'] ?? ''}',
                       maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: C.muted, fontSize: 12)),
               ])),
             ]),

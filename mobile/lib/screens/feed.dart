@@ -4,7 +4,6 @@ import 'package:share_plus/share_plus.dart';
 import '../app_state.dart';
 import '../config.dart';
 import '../services/api.dart';
-import '../services/status.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 import 'channels.dart' show ChannelIcon, ChannelPage;
@@ -130,8 +129,6 @@ class FeedCard extends StatelessWidget {
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text(channel?['name'] as String? ?? '', maxLines: 1, overflow: TextOverflow.ellipsis,
                     style: const TextStyle(fontWeight: FontWeight.w600)),
-                Text(timeAgo(DateTime.tryParse(post['created_at']?.toString() ?? '')?.toLocal()),
-                    style: const TextStyle(color: C.muted, fontSize: 12)),
               ])),
               IconButton(tooltip: 'Open post', icon: const Icon(Icons.more_vert), onPressed: open),
             ]),
