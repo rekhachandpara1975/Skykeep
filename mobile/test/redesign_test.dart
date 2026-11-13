@@ -34,9 +34,11 @@ void main() {
     expect(find.textContaining('Asha'), findsOneWidget);
     expect(find.text('Upload files'), findsOneWidget);
     expect(find.text('Vacation.jpg'), findsOneWidget);
-    expect(exploreCategories, ['All', 'Entertainment', 'Music', 'Learning', 'Technology', 'Education', 'Lifestyle', 'More']);
     expect(find.widgetWithText(ChoiceChip, 'All'), findsOneWidget);
-    expect(find.widgetWithText(ChoiceChip, 'Entertainment'), findsOneWidget);
+    expect(find.widgetWithText(ChoiceChip, 'Tech'), findsOneWidget); // chips come from the channels' own categories
+    expect(find.widgetWithText(ChoiceChip, 'Travel'), findsOneWidget);
+    expect(find.widgetWithText(ChoiceChip, 'Entertainment'), findsNothing);
+    expect(find.text('Suggested channels'), findsNothing);
     expect(find.text('Sunrise over the hills'), findsOneWidget);
   });
 

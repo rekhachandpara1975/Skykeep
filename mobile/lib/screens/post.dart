@@ -1,15 +1,13 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:video_player/video_player.dart';
 
 import '../app_state.dart';
 import '../config.dart';
 import '../services/api.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
+import '../widgets/pro_player.dart';
 import 'explore.dart';
 import 'home.dart' show HomeShellState;
 import 'login_sheet.dart';
@@ -18,8 +16,11 @@ import 'premium.dart';
 const reportReasons = ['Sexual/nude', 'Violence', 'Hate/harassment', 'Copyright', 'Spam/scam', 'Other'];
 
 class PostScreen extends StatefulWidget {
-  const PostScreen({super.key, required this.postId});
+  const PostScreen({super.key, required this.postId, this.queue = const []});
   final String postId;
+
+  /// Posts in the order they were listed: powers the player's previous / next buttons.
+  final List<String> queue;
   @override
   State<PostScreen> createState() => _PostScreenState();
 }
@@ -39,6 +40,13 @@ class _PostScreenState extends State<PostScreen> {
       _post = await AppScope.read(context).api.post(widget.postId);
     } catch (_) {}
     if (mounted) setState(() => _loading = false);
+  }
+
+  int get _at => widget.queue.indexOf(widget.postId);
+  void _go(int step) {
+    final i = _at + step;
+    if (_at < 0 || i < 0 || i >= widget.queue.length) return;
+    Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => PostScreen(postId: widget.queue[i], queue: widget.queue)));
   }
 
   Future<void> _report() async {
@@ -103,7 +111,10 @@ class _PostScreenState extends State<PostScreen> {
                   if ((_post!['description'] as String?)?.isNotEmpty == true)
                     Padding(padding: const EdgeInsets.only(top: 8), child: Text(_post!['description'] as String)),
                   const SizedBox(height: 16),
-                  for (final it in items) Padding(padding: const EdgeInsets.only(bottom: 16), child: MediaItem(item: Json.from(it as Map))),
+                  for (final it in items) Padding(padding: const EdgeInsets.only(bottom: 16), child: MediaItem(
+                      item: Json.from(it as Map), title: _post!['title'] as String?,
+                      onNext: _at >= 0 && _at < widget.queue.length - 1 ? () => _go(1) : null,
+                      onPrevious: _at > 0 ? () => _go(-1) : null)),
                 ]),
     );
   }
@@ -111,8 +122,10 @@ class _PostScreenState extends State<PostScreen> {
 
 /// One media item: asks the server what to play (full / trailer / locked).
 class MediaItem extends StatefulWidget {
-  const MediaItem({super.key, required this.item});
+  const MediaItem({super.key, required this.item, this.title, this.onNext, this.onPrevious});
   final Json item;
+  final String? title;
+  final VoidCallback? onNext, onPrevious;
   @override
   State<MediaItem> createState() => _MediaItemState();
 }
@@ -153,7 +166,12 @@ class _MediaItemState extends State<MediaItem> {
       if (kind == 'locked')
         _Locked(plansVisible: s.plansVisible && Config.sellsPlans)
       else if (kind != null && isVideo)
-        Player(itemId: widget.item['id'] as String, storageKey: _play!['key'] as String, trailer: kind == 'trailer')
+        ProPlayer(
+          itemId: widget.item['id'] as String, storageKey: _play!['key'] as String, title: widget.title,
+          trailerKey: kind == 'full' ? _play!['trailer_key'] as String? : null, // watch the trailer first, then the full video
+          trailerOnly: kind == 'trailer', onNext: widget.onNext, onPrevious: widget.onPrevious,
+          onUpgrade: s.plansVisible && Config.sellsPlans ? () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PremiumScreen())) : null,
+        )
       else if (kind != null)
         ClipRRect(borderRadius: BorderRadius.circular(12),
             child: AspectRatio(aspectRatio: 16 / 9, child: MediaThumb(keyName: _play!['key'] as String))),
@@ -184,102 +202,4 @@ class _Locked extends StatelessWidget {
                 child: const Text('Get Premium')),
         ]),
       );
-}
-
-/// Video with signed-URL refresh and resume position.
-class Player extends StatefulWidget {
-  const Player({super.key, required this.itemId, required this.storageKey, this.trailer = false});
-  final String itemId, storageKey;
-  final bool trailer;
-  @override
-  State<Player> createState() => _PlayerState();
-}
-
-class _PlayerState extends State<Player> {
-  VideoPlayerController? _c;
-  Timer? _save;
-  bool _failed = false;
-
-  String get _posKey => 'pos_${widget.storageKey}';
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _open());
-  }
-
-  bool _opening = false;
-  int _autoRetries = 0;
-
-  Future<void> _open({bool refresh = false}) async {
-    if (!mounted || _opening) return; // one open at a time: the error listener can fire many times
-    _opening = true;
-    try {
-      await _openOnce(refresh: refresh);
-    } finally {
-      _opening = false;
-    }
-  }
-
-  Future<void> _openOnce({required bool refresh}) async {
-    final app = AppScope.read(context);
-    if (refresh) app.api.forgetSigned('media', widget.storageKey);
-    final url = await app.api.signedUrl('media', widget.storageKey);
-    if (!mounted) return;
-    if (url == null) return setState(() => _failed = true);
-    final resumeAt = Duration(milliseconds: _c?.value.position.inMilliseconds ?? app.prefs.getInt(_posKey) ?? 0);
-    final old = _c;
-    final c = VideoPlayerController.networkUrl(Uri.parse(url));
-    try {
-      await c.initialize();
-      await c.seekTo(resumeAt);
-      if (!mounted) { await c.dispose(); return; }
-      c.addListener(() {
-        // signed URL expired mid-stream → refresh and continue (a few times, then show Retry)
-        if (!c.value.hasError || !mounted || c != _c) return;
-        if (_autoRetries++ < 3) { _open(refresh: true); } else { setState(() => _failed = true); }
-      });
-      setState(() { _c = c; _failed = false; });
-      await old?.dispose();
-      _save ??= Timer.periodic(const Duration(seconds: 5), (_) {
-        final p = _c?.value.position;
-        if (p != null) app.prefs.setInt(_posKey, p.inMilliseconds);
-      });
-    } catch (_) {
-      await c.dispose();
-      if (mounted) setState(() => _failed = true);
-    }
-  }
-
-  @override
-  void dispose() {
-    _save?.cancel();
-    _c?.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final c = _c;
-    if (_failed) {
-      return AspectRatio(aspectRatio: 16 / 9, child: Center(child: OutlinedButton(onPressed: () { _autoRetries = 0; _open(refresh: true); }, child: const Text('Retry video'))));
-    }
-    if (c == null || !c.value.isInitialized) {
-      return const AspectRatio(aspectRatio: 16 / 9, child: Center(child: CircularProgressIndicator()));
-    }
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(12),
-      child: AspectRatio(
-        aspectRatio: c.value.aspectRatio == 0 ? 16 / 9 : c.value.aspectRatio,
-        child: Stack(alignment: Alignment.bottomCenter, children: [
-          VideoPlayer(c),
-          GestureDetector(onTap: () => setState(() => c.value.isPlaying ? c.pause() : c.play())),
-          if (!c.value.isPlaying)
-            Center(child: Semantics(button: true, label: 'Play', child: IconButton.filled(iconSize: 40,
-                onPressed: () => setState(c.play), icon: const Icon(Icons.play_arrow)))),
-          VideoProgressIndicator(c, allowScrubbing: true, colors: const VideoProgressColors(playedColor: C.primary)),
-        ]),
-      ),
-    );
-  }
 }

@@ -80,6 +80,7 @@ select is((select string_agg(title, ',' order by title) from posts), 'all,org', 
 select is((select count(*)::int from post_items), 2, 'paid: org item count follows post visibility');
 select is(playable_key('00000000-0000-0000-0000-0000000001e2') ->> 'kind', 'full', 'paid: org free item plays in full');
 select is(playable_key('00000000-0000-0000-0000-0000000001e1') ->> 'kind', 'trailer', 'paid: org premium item -> trailer');
+select is(playable_key('00000000-0000-0000-0000-0000000001e1') ->> 'key', 'm/trailer.mp4', 'paid: org without a plan never receives the full media key');
 select is(can_read_media('m/prem.mp4'), false, 'paid: org signed URL for full premium media refused');
 select is(can_read_media('m/trailer.mp4'), true, 'paid: org may read the trailer');
 select is((can_view('00000000-0000-0000-0000-0000000001e1') ->> 'download')::boolean, false, 'paid: org download refused');
@@ -92,6 +93,8 @@ select is((select string_agg(title, ',' order by title) from posts), 'all,org', 
 select is((select count(*)::int from post_items), 2, 'paid: org_plan item count follows post visibility');
 select is(playable_key('00000000-0000-0000-0000-0000000001e2') ->> 'kind', 'full', 'paid: org_plan free item plays in full');
 select is(playable_key('00000000-0000-0000-0000-0000000001e1') ->> 'kind', 'full', 'paid: org_plan premium item -> full');
+select is(playable_key('00000000-0000-0000-0000-0000000001e1') ->> 'trailer_key', 'm/trailer.mp4', 'paid: org_plan gets the trailer to play before the full video');
+select is(playable_key('00000000-0000-0000-0000-0000000001e2') ->> 'trailer_key', null, 'paid: org_plan item without trailer has no trailer_key');
 select is(can_read_media('m/prem.mp4'), true, 'paid: org_plan signed URL for full premium media allowed');
 select is(can_read_media('m/trailer.mp4'), true, 'paid: org_plan may read the trailer');
 select is((can_view('00000000-0000-0000-0000-0000000001e1') ->> 'download')::boolean, true, 'paid: org_plan download allowed');

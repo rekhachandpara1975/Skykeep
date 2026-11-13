@@ -5,14 +5,15 @@ import '../services/api.dart';
 import '../services/status.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
-import 'channels.dart' show ChannelIcon, ChannelPage;
+import 'channels.dart' show ChannelIcon;
 import 'home.dart';
 import 'login_sheet.dart';
 import 'post.dart';
 import 'profile.dart' show ProfileButton;
 
-/// Fixed browsing categories (guide §04). "More" lists every category the server knows.
-const exploreCategories = ['All', 'Entertainment', 'Music', 'Learning', 'Technology', 'Education', 'Lifestyle', 'More'];
+/// Most categories shown as chips; the rest are under "More". Categories come from each channel's own category
+/// (set in Create/Edit channel, and by admins in Admin → Channels), so nothing here needs managing.
+const maxCategoryChips = 5;
 
 class ExploreScreen extends StatefulWidget {
   const ExploreScreen({super.key});
@@ -22,7 +23,8 @@ class ExploreScreen extends StatefulWidget {
 
 class _ExploreScreenState extends State<ExploreScreen> {
   final _posts = <Json>[];
-  List<Json> _files = const [], _channels = const [];
+  List<Json> _files = const [];
+  List<String> _cats = const [];
   String? _cat;
   int _page = 0;
   bool _loading = true, _more = true, _error = false;
@@ -47,9 +49,9 @@ class _ExploreScreenState extends State<ExploreScreen> {
     final api = AppScope.read(context).api;
     setState(() { _posts.clear(); _page = 0; _more = true; _error = false; _loading = true; });
     try {
-      final r = await Future.wait([api.recentFiles(), api.channels('discover')]);
-      _files = r[0];
-      _channels = r[1].take(8).toList();
+      final r = await Future.wait([api.recentFiles(), api.categories()]);
+      _files = r[0] as List<Json>;
+      _cats = r[1] as List<String>;
     } catch (_) {}
     await _load(force: true);
   }
@@ -70,11 +72,9 @@ class _ExploreScreenState extends State<ExploreScreen> {
 
   Future<void> _pickCategory(String c) async {
     if (c == 'More') {
-      final cats = await AppScope.read(context).api.categories();
-      if (!mounted) return;
       final picked = await showModalBottomSheet<String>(context: context, builder: (s) => SafeArea(child: ListView(shrinkWrap: true, children: [
         const ListTile(title: Text('All categories', style: TextStyle(fontWeight: FontWeight.w700))),
-        for (final x in cats) ListTile(title: Text(x), onTap: () => Navigator.pop(s, x)),
+        for (final x in _cats) ListTile(title: Text(x), selected: x == _cat, onTap: () => Navigator.pop(s, x)),
       ])));
       if (picked == null) return;
       c = picked;
@@ -91,6 +91,8 @@ class _ExploreScreenState extends State<ExploreScreen> {
     final name = (s.displayName ?? app.api.user?.email?.split('@').first ?? '').trim();
     final greeting = switch (DateTime.now().hour) { < 12 => 'Good morning', < 17 => 'Good afternoon', _ => 'Good evening' };
 
+    final chips = ['All', ..._cats.take(maxCategoryChips), if (_cats.length > maxCategoryChips) 'More'];
+    final moreSelected = _cat != null && _cats.indexOf(_cat!) >= maxCategoryChips;
     final header = <Widget>[
       Text(guest || name.isEmpty ? greeting : '$greeting, $name',
           style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: C.text)),
@@ -102,21 +104,12 @@ class _ExploreScreenState extends State<ExploreScreen> {
         SectionHeader('Recent files', onSeeAll: () => HomeShell.of(context)?.go(HomeShellState.cloudTab)),
         Card(child: Column(children: [for (final f in _files) _RecentFile(file: f)])),
       ],
-      if (_channels.isNotEmpty) ...[
-        SectionHeader('Suggested channels', onSeeAll: () => HomeShell.of(context)?.go(2)),
-        SizedBox(height: 132, child: ListView.separated(
-          scrollDirection: Axis.horizontal,
-          itemCount: _channels.length,
-          separatorBuilder: (_, _) => const SizedBox(width: 10),
-          itemBuilder: (_, i) => _ChannelChip(channel: _channels[i]),
-        )),
-      ],
       const SectionHeader('Latest posts'),
-      SizedBox(height: 40, child: ListView(scrollDirection: Axis.horizontal, children: [
-        for (final c in exploreCategories)
+      if (_cats.isNotEmpty) SizedBox(height: 40, child: ListView(scrollDirection: Axis.horizontal, children: [
+        for (final c in chips)
           Padding(padding: const EdgeInsets.only(right: 8), child: ChoiceChip(
-            label: Text(c == 'More' && _cat != null && !exploreCategories.contains(_cat) ? _cat! : c),
-            selected: (c == 'All' && _cat == null) || c == _cat || (c == 'More' && _cat != null && !exploreCategories.contains(_cat)),
+            label: Text(c == 'More' && moreSelected ? _cat! : c),
+            selected: c == 'All' ? _cat == null : c == 'More' ? moreSelected : c == _cat,
             showCheckmark: false,
             onSelected: (_) => _pickCategory(c),
           )),
@@ -141,7 +134,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
       ]))];
     } else {
       feed = [
-        for (final p in _posts) Padding(padding: const EdgeInsets.only(bottom: 12), child: PostCard(post: p)),
+        for (final p in _posts) Padding(padding: const EdgeInsets.only(bottom: 12), child: PostCard(post: p, queue: [for (final x in _posts) x['id'] as String])),
         if (_more) const Skeleton(height: 220),
       ];
     }
@@ -234,32 +227,10 @@ class _RecentFile extends StatelessWidget {
   }
 }
 
-class _ChannelChip extends StatelessWidget {
-  const _ChannelChip({required this.channel});
-  final Json channel;
-  @override
-  Widget build(BuildContext context) => SizedBox(
-        width: 112,
-        child: Card(
-          clipBehavior: Clip.antiAlias,
-          child: InkWell(
-            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ChannelPage(channelId: channel['id'] as String))),
-            child: Padding(padding: const EdgeInsets.all(10), child: Column(children: [
-              ClipOval(child: ChannelIcon(keyName: channel['icon_url'] as String?, size: 52)),
-              const SizedBox(height: 8),
-              Text(channel['name'] as String? ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: TextAlign.center,
-                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-              Text('${compactCount(channel['members_count'] as num? ?? 0)} members', maxLines: 1, overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: C.muted, fontSize: 11)),
-            ])),
-          ),
-        ),
-      );
-}
-
 class PostCard extends StatelessWidget {
-  const PostCard({super.key, required this.post});
+  const PostCard({super.key, required this.post, this.queue = const []});
   final Json post;
+  final List<String> queue;
   @override
   Widget build(BuildContext context) {
     final items = (post['post_items'] as List?) ?? const [];
@@ -269,7 +240,7 @@ class PostCard extends StatelessWidget {
     return Card(
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => PostScreen(postId: post['id'] as String))),
+        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => PostScreen(postId: post['id'] as String, queue: queue))),
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           AspectRatio(aspectRatio: 16 / 9, child: MediaThumb(keyName: thumb, premium: premium)),
           Padding(
@@ -334,7 +305,7 @@ class SearchResultsScreen extends StatelessWidget {
               padding: const EdgeInsets.all(16),
               itemCount: s.data!.length,
               separatorBuilder: (_, _) => const SizedBox(height: 12),
-              itemBuilder: (_, i) => PostCard(post: s.data![i]),
+              itemBuilder: (_, i) => PostCard(post: s.data![i], queue: [for (final x in s.data!) x['id'] as String]),
             );
           },
         ),
