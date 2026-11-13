@@ -187,7 +187,7 @@ class _CloudSummary extends StatelessWidget {
             const SizedBox(height: 8),
             ClipRRect(borderRadius: BorderRadius.circular(6), child: LinearProgressIndicator(
                 value: (status.usedBytes / status.quotaBytes).clamp(0.0, 1.0), minHeight: 6,
-                backgroundColor: C.surface2, color: C.primary)),
+                backgroundColor: Colors.white, color: C.primary)),
           ],
           const SizedBox(height: 14),
           FilledButton.icon(
@@ -203,7 +203,7 @@ class _CloudSummary extends StatelessWidget {
         Container(
           width: 84, height: 84,
           decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle,
-              boxShadow: [BoxShadow(color: Color(0x33E21B1B), blurRadius: 18, offset: Offset(0, 6))]),
+              boxShadow: [BoxShadow(color: Color(0x1F2563EB), blurRadius: 18, offset: Offset(0, 6))]),
           alignment: Alignment.center,
           child: const CloudMark(size: 54),
         ),

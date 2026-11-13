@@ -61,7 +61,7 @@ class _SkyKeepAppState extends State<SkyKeepApp> {
 
   @override
   Widget build(BuildContext context) {
-    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.light.copyWith(statusBarColor: Colors.transparent));
+    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark.copyWith(statusBarColor: Colors.transparent));
     return AppScope(
       controller: widget.controller,
       child: MaterialApp(

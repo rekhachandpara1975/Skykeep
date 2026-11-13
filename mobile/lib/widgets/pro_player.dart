@@ -54,10 +54,13 @@ class ProPlayer extends StatefulWidget {
   State<ProPlayer> createState() => _ProPlayerState();
 }
 
-class _ProPlayerState extends State<ProPlayer> {
+class _ProPlayerState extends State<ProPlayer> with WidgetsBindingObserver {
   VideoPlayerController? _c;
   Timer? _save, _hide;
   final _ui = ValueNotifier<int>(0);
+  bool _autoFs = false; // fullscreen entered by rotating the device
+  Orientation? _lastOrientation;
+  DateTime _suppressAutoUntil = DateTime.fromMillisecondsSinceEpoch(0);
 
   late final List<String> _keys = [if (widget.trailerKey != null && !widget.trailerOnly) widget.trailerKey!, widget.storageKey];
   int _stage = 0;
@@ -81,11 +84,16 @@ class _ProPlayerState extends State<ProPlayer> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _open());
+    WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _lastOrientation = _deviceOrientation();
+      _open();
+    });
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _save?.cancel();
     _hide?.cancel();
     _hudTimer?.cancel();
@@ -93,6 +101,30 @@ class _ProPlayerState extends State<ProPlayer> {
     _ui.dispose();
     if (_fullscreen) _restoreChrome();
     super.dispose();
+  }
+
+  // Turning the phone drives fullscreen: rotate to landscape → fullscreen, back to portrait → exit.
+  Orientation? _deviceOrientation() {
+    if (!mounted) return null;
+    final view = View.maybeOf(context);
+    if (view == null) return null;
+    final s = view.physicalSize;
+    if (s.width == 0 || s.height == 0) return null;
+    return s.width >= s.height ? Orientation.landscape : Orientation.portrait;
+  }
+
+  @override
+  void didChangeMetrics() {
+    final o = _deviceOrientation();
+    if (o == null || o == _lastOrientation) return;
+    _lastOrientation = o;
+    if (_c == null || !_c!.value.isInitialized) return;
+    if (o == Orientation.landscape && !_fullscreen) {
+      if (DateTime.now().isBefore(_suppressAutoUntil)) return; // just exited: don't snap back in
+      _enterFullscreen(auto: true);
+    } else if (o == Orientation.portrait && _fullscreen && _autoFs) {
+      _exitFullscreen();
+    }
   }
 
   // ---------------- loading ----------------
@@ -269,9 +301,12 @@ class _ProPlayerState extends State<ProPlayer> {
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   }
 
-  Future<void> _enterFullscreen() async {
+  Future<void> _enterFullscreen({bool auto = false}) async {
     if (_fullscreen || _c == null) return;
+    _autoFs = auto;
     _set(() => _fullscreen = true);
+    // Button: rotate the app to landscape ourselves. Auto: the device already rotated, so just
+    // keep both landscape sides allowed so it follows the phone.
     await SystemChrome.setPreferredOrientations(const [DeviceOrientation.landscapeLeft, DeviceOrientation.landscapeRight]);
     await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
     if (!mounted) return;
@@ -283,11 +318,19 @@ class _ProPlayerState extends State<ProPlayer> {
       ),
     ));
     _restoreChrome();
-    if (mounted) _set(() => _fullscreen = false);
+    if (mounted) _set(() { _fullscreen = false; _autoFs = false; });
   }
 
   Future<void> _exitFullscreen() async {
+    // Return to portrait and briefly ignore the sensor, so holding the phone sideways
+    // doesn't immediately re-open fullscreen.
+    _suppressAutoUntil = DateTime.now().add(const Duration(milliseconds: 1200));
+    _lastOrientation = Orientation.portrait;
+    await SystemChrome.setPreferredOrientations(const [DeviceOrientation.portraitUp]);
     if (mounted) Navigator.of(context).pop();
+    Future.delayed(const Duration(milliseconds: 700), () {
+      if (mounted) SystemChrome.setPreferredOrientations(const []); // let the phone rotate freely again
+    });
   }
 
   // ---------------- UI ----------------
