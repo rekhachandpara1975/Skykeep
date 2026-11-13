@@ -84,7 +84,7 @@ class _FeedScreenState extends State<FeedScreen> {
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
         itemCount: _posts.length + (_more ? 1 : 0),
         separatorBuilder: (_, _) => const SizedBox(height: 14),
-        itemBuilder: (_, i) => i == _posts.length ? const Skeleton(height: 240) : FeedCard(post: _posts[i]),
+        itemBuilder: (_, i) => i == _posts.length ? const Skeleton(height: 240) : FeedCard(post: _posts[i], queue: [for (final x in _posts) x['id'] as String]),
       );
     }
     return Scaffold(
@@ -105,8 +105,9 @@ class _FeedScreenState extends State<FeedScreen> {
 
 /// Social-style post card: channel row, big media, actions.
 class FeedCard extends StatelessWidget {
-  const FeedCard({super.key, required this.post});
+  const FeedCard({super.key, required this.post, this.queue = const []});
   final Json post;
+  final List<String> queue;
   @override
   Widget build(BuildContext context) {
     final items = (post['post_items'] as List?) ?? const [];
@@ -114,7 +115,7 @@ class FeedCard extends StatelessWidget {
     final premium = items.any((e) => (e as Map)['is_premium'] == true);
     final channel = post['channels'] as Map?;
     final id = post['id'] as String;
-    void open() => Navigator.push(context, MaterialPageRoute(builder: (_) => PostScreen(postId: id)));
+    void open() => Navigator.push(context, MaterialPageRoute(builder: (_) => PostScreen(postId: id, queue: queue)));
     return Card(
       clipBehavior: Clip.antiAlias,
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [

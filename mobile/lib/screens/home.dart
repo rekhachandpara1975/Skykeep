@@ -44,20 +44,50 @@ class HomeShellState extends State<HomeShell> {
   @override
   Widget build(BuildContext context) => Scaffold(
         body: IndexedStack(index: _tab, children: _pages),
-        bottomNavigationBar: DecoratedBox(
-          decoration: const BoxDecoration(border: Border(top: BorderSide(color: C.border))),
-          child: NavigationBar(
-            selectedIndex: _tab,
-            onDestinationSelected: go,
-            labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-            destinations: const [
-              NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home_rounded), label: 'Explore'),
-              NavigationDestination(icon: Icon(Icons.dynamic_feed_outlined), selectedIcon: Icon(Icons.dynamic_feed), label: 'Feed'),
-              NavigationDestination(icon: Icon(Icons.hub_outlined), selectedIcon: Icon(Icons.hub), label: 'Channels'),
-              NavigationDestination(icon: Icon(Icons.cloud_outlined), selectedIcon: Icon(Icons.cloud), label: 'Cloud'),
-              NavigationDestination(icon: Icon(Icons.workspace_premium_outlined), selectedIcon: Icon(Icons.workspace_premium), label: 'Premium'),
-            ],
-          ),
-        ),
+        bottomNavigationBar: _NavBar(selected: _tab, onSelected: go),
+      );
+}
+
+/// Bottom bar: the selected tab is a red pill holding its icon and label.
+class _NavBar extends StatelessWidget {
+  const _NavBar({required this.selected, required this.onSelected});
+  final int selected;
+  final ValueChanged<int> onSelected;
+  static const _items = [
+    (Icons.home_outlined, Icons.home_rounded, 'Explore'),
+    (Icons.dynamic_feed_outlined, Icons.dynamic_feed, 'Feed'),
+    (Icons.hub_outlined, Icons.hub, 'Channels'),
+    (Icons.cloud_outlined, Icons.cloud, 'Cloud'),
+    (Icons.workspace_premium_outlined, Icons.workspace_premium, 'Premium'),
+  ];
+
+  @override
+  Widget build(BuildContext context) => Container(
+        key: const Key('nav-bar'),
+        decoration: const BoxDecoration(color: C.surface, border: Border(top: BorderSide(color: C.border))),
+        child: SafeArea(top: false, child: Padding(
+          padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
+          child: Row(children: [
+            for (final (i, it) in _items.indexed)
+              Expanded(flex: i == selected ? 5 : 4, child: Semantics(
+                selected: i == selected, button: true, label: it.$3,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(22),
+                  onTap: () => onSelected(i),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 180),
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    decoration: BoxDecoration(color: i == selected ? C.primary : Colors.transparent, borderRadius: BorderRadius.circular(22)),
+                    child: Column(mainAxisSize: MainAxisSize.min, children: [
+                      Icon(i == selected ? it.$2 : it.$1, size: 26, color: i == selected ? Colors.white : C.muted),
+                      const SizedBox(height: 2),
+                      FittedBox(fit: BoxFit.scaleDown, child: Text(it.$3, maxLines: 1,
+                          style: TextStyle(fontSize: 12, fontWeight: i == selected ? FontWeight.w700 : FontWeight.w500, color: i == selected ? Colors.white : C.muted))),
+                    ]),
+                  ),
+                ),
+              )),
+          ]),
+        )),
       );
 }

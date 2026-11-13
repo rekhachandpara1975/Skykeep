@@ -19,9 +19,9 @@ void main() {
     await pumpApp(t, FakeApi(posts: _posts), const HomeShell());
     expect(find.byTooltip('Profile'), findsWidgets);
     for (final l in ['Explore', 'Feed', 'Channels', 'Cloud', 'Premium']) {
-      expect(find.descendant(of: find.byType(NavigationBar), matching: find.text(l)), findsOneWidget, reason: l);
+      expect(find.descendant(of: find.byKey(const Key('nav-bar')), matching: find.text(l)), findsOneWidget, reason: l);
     }
-    await t.tap(find.descendant(of: find.byType(NavigationBar), matching: find.text('Feed')));
+    await t.tap(find.descendant(of: find.byKey(const Key('nav-bar')), matching: find.text('Feed')));
     await t.pumpAndSettle();
     expect(find.text('For You'), findsOneWidget);
   });
@@ -34,9 +34,11 @@ void main() {
     expect(find.textContaining('Asha'), findsOneWidget);
     expect(find.text('Upload files'), findsOneWidget);
     expect(find.text('Vacation.jpg'), findsOneWidget);
-    expect(exploreCategories, ['All', 'Entertainment', 'Music', 'Learning', 'Technology', 'Education', 'Lifestyle', 'More']);
     expect(find.widgetWithText(ChoiceChip, 'All'), findsOneWidget);
-    expect(find.widgetWithText(ChoiceChip, 'Entertainment'), findsOneWidget);
+    expect(find.widgetWithText(ChoiceChip, 'Tech'), findsOneWidget); // chips come from the channels' own categories
+    expect(find.widgetWithText(ChoiceChip, 'Travel'), findsOneWidget);
+    expect(find.widgetWithText(ChoiceChip, 'Entertainment'), findsNothing);
+    expect(find.text('Suggested channels'), findsNothing);
     expect(find.text('Sunrise over the hills'), findsOneWidget);
   });
 

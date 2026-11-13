@@ -8,11 +8,12 @@ import 'config.dart';
 import 'services/api.dart';
 import 'services/play_integrity.dart';
 import 'services/status.dart';
+import 'services/thumbs.dart';
 import 'services/upi.dart';
 
 /// Holds server status, the live plan catalog and the pending-payment queue.
 class AppController extends ChangeNotifier with WidgetsBindingObserver {
-  AppController({required this.api, required this.prefs, this.upi = const UpiLauncher(), this.realtime = true, this.play = const PlayIntegrity()})
+  AppController({required this.api, required this.prefs, this.upi = const UpiLauncher(), this.realtime = true, this.play = const PlayIntegrity(), this.thumbs = const Thumbs()})
       : queue = PendingPaymentsQueue(prefs);
 
   final Api api;
@@ -21,6 +22,7 @@ class AppController extends ChangeNotifier with WidgetsBindingObserver {
   final PendingPaymentsQueue queue;
   final bool realtime;
   final PlayIntegrity play;
+  final Thumbs thumbs;
   bool _playSyncing = false;
 
   AppStatus status = const AppStatus();

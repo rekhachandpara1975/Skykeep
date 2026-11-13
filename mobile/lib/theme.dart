@@ -3,47 +3,49 @@ import 'package:google_fonts/google_fonts.dart';
 
 /// All colours live here — exact SkyKeep brand tokens (docs/brand/README.md).
 class C {
-  // brand
-  static const primary = Color(0xFF2563EB);
-  static const primaryDark = Color(0xFF1D4ED8);
-  static const accent = Color(0xFF38BDF8); // sky
+  // brand: red on deep maroon, slate-violet cards (dark theme)
+  static const primary = Color(0xFFE21B1B);
+  static const primaryDark = Color(0xFFB91212);
+  static const accent = Color(0xFFFF8A80); // coral: links, card titles
   static const navy = Color(0xFF0B1220);
   static const navy2 = Color(0xFF111C30);
-  static const darkCard = Color(0xFF17243A);
-  // light surfaces
-  static const background = Color(0xFFF7F9FC);
-  static const surface = Color(0xFFFFFFFF);
-  static const surface2 = Color(0xFFEFF4FB); // tinted fills, chips, skeletons
-  static const primarySoft = Color(0xFFE6EEFD);
-  static const border = Color(0xFFE2E8F0);
-  static const text = Color(0xFF0F172A);
-  static const muted = Color(0xFF64748B); // 4.8:1 on white
-  // status (icons/fills use the token; text on white uses the darker *Text shade for contrast)
+  static const darkCard = Color(0xFF1F1D2B);
+  // dark surfaces
+  static const background = Color(0xFF1B0A0F);
+  static const surface = Color(0xFF1F1D2B);
+  static const surface2 = Color(0xFF2A2837); // tinted fills, chips, skeletons
+  static const primarySoft = Color(0xFF4A1318);
+  static const border = Color(0xFF2E2B3C);
+  static const text = Color(0xFFF6F4F5);
+  static const muted = Color(0xFFA7A3B3); // 6.9:1 on the card colour
+  // status (on dark the *Text shades are the light ones)
   static const success = Color(0xFF10B981);
-  static const successText = Color(0xFF047857);
+  static const successText = Color(0xFF34D399);
   static const warning = Color(0xFFF59E0B);
-  static const warningText = Color(0xFFB45309);
+  static const warningText = Color(0xFFFBBF24);
   static const danger = Color(0xFFEF4444);
-  static const dangerText = Color(0xFFB91C1C);
+  static const dangerText = Color(0xFFFCA5A5);
   static const gold = Color(0xFFF5C76A); // Premium only
-  static const goldText = Color(0xFF9A6A00);
+  static const goldText = Color(0xFFF5C76A);
   static const folder = Color(0xFFF5C76A);
-  static const gradient = LinearGradient(colors: [accent, primary], begin: Alignment.topLeft, end: Alignment.bottomRight);
-  static const heroGradient = LinearGradient(colors: [Color(0xFFDBEAFE), Color(0xFFF0F7FF)], begin: Alignment.topLeft, end: Alignment.bottomRight);
-  static const navyGradient = LinearGradient(colors: [navy2, navy], begin: Alignment.topLeft, end: Alignment.bottomRight);
+  static const gradient = LinearGradient(colors: [Color(0xFFF03A3A), Color(0xFFC91414)], begin: Alignment.topLeft, end: Alignment.bottomRight);
+  static const heroGradient = LinearGradient(colors: [Color(0xFF3B1118), Color(0xFF1F1421)], begin: Alignment.topLeft, end: Alignment.bottomRight);
+  static const navyGradient = LinearGradient(colors: [Color(0xFF3B1118), Color(0xFF1F1421)], begin: Alignment.topLeft, end: Alignment.bottomRight);
+  // the logo keeps its original blue
+  static const logoGradient = LinearGradient(colors: [Color(0xFF38BDF8), Color(0xFF2563EB)], begin: Alignment.topLeft, end: Alignment.bottomRight);
 }
 
 ThemeData buildTheme({bool googleFonts = true}) {
   final base = ThemeData(
     useMaterial3: true,
-    brightness: Brightness.light,
+    brightness: Brightness.dark,
     scaffoldBackgroundColor: C.background,
-    colorScheme: const ColorScheme.light(
+    colorScheme: const ColorScheme.dark(
       primary: C.primary, secondary: C.accent, surface: C.surface, error: C.danger,
       onPrimary: Colors.white, onSurface: C.text, outline: C.border, primaryContainer: C.primarySoft,
     ),
     cardTheme: CardThemeData(
-      color: C.surface, elevation: 0, margin: EdgeInsets.zero, shadowColor: const Color(0x14153A80),
+      color: C.surface, elevation: 0, margin: EdgeInsets.zero, shadowColor: Colors.black,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: const BorderSide(color: C.border)),
     ),
     appBarTheme: const AppBarTheme(
@@ -68,11 +70,11 @@ ThemeData buildTheme({bool googleFonts = true}) {
       backgroundColor: C.primary, foregroundColor: Colors.white, minimumSize: const Size(64, 48),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)), textStyle: const TextStyle(fontFamily: 'Roboto', fontWeight: FontWeight.w600))),
     outlinedButtonTheme: OutlinedButtonThemeData(style: OutlinedButton.styleFrom(
-      foregroundColor: C.primary, minimumSize: const Size(64, 48), side: const BorderSide(color: C.border),
+      foregroundColor: C.text, minimumSize: const Size(64, 48), side: const BorderSide(color: C.border),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)), textStyle: const TextStyle(fontFamily: 'Roboto', fontWeight: FontWeight.w600))),
-    textButtonTheme: TextButtonThemeData(style: TextButton.styleFrom(foregroundColor: C.primary)),
+    textButtonTheme: TextButtonThemeData(style: TextButton.styleFrom(foregroundColor: C.accent)),
     floatingActionButtonTheme: const FloatingActionButtonThemeData(backgroundColor: C.primary, foregroundColor: Colors.white, shape: CircleBorder()),
-    chipTheme: const ChipThemeData(backgroundColor: C.surface, selectedColor: C.primarySoft, side: BorderSide(color: C.border),
+    chipTheme: const ChipThemeData(backgroundColor: C.surface, selectedColor: C.primary, side: BorderSide.none, secondaryLabelStyle: TextStyle(color: Colors.white),
         labelStyle: TextStyle(fontFamily: 'Roboto', color: C.text), shape: StadiumBorder()),
     listTileTheme: const ListTileThemeData(iconColor: C.muted),
     bottomSheetTheme: const BottomSheetThemeData(backgroundColor: C.surface, surfaceTintColor: Colors.transparent),
@@ -100,7 +102,7 @@ class GradientButton extends StatelessWidget {
         opacity: onPressed == null ? 0.5 : 1,
         child: DecoratedBox(
           decoration: BoxDecoration(gradient: C.gradient, borderRadius: BorderRadius.circular(14),
-              boxShadow: onPressed == null ? null : const [BoxShadow(color: Color(0x332563EB), blurRadius: 12, offset: Offset(0, 4))]),
+              boxShadow: onPressed == null ? null : const [BoxShadow(color: Color(0x55E21B1B), blurRadius: 12, offset: Offset(0, 4))]),
           child: Material(
             type: MaterialType.transparency,
             child: InkWell(
@@ -185,7 +187,7 @@ class _CloudPainter extends CustomPainter {
       ..addOval(Rect.fromCircle(center: Offset(w * .52, h * .44), radius: h * .44))
       ..addOval(Rect.fromCircle(center: Offset(w * .76, h * .6), radius: h * .36))
       ..addRRect(RRect.fromLTRBR(w * .27, h * .5, w * .76, h * .96, Radius.circular(h * .1)));
-    canvas.drawPath(cloud, Paint()..shader = C.gradient.createShader(Offset.zero & s));
+    canvas.drawPath(cloud, Paint()..shader = C.logoGradient.createShader(Offset.zero & s));
     final a = Paint()..color = Colors.white..style = PaintingStyle.stroke..strokeWidth = w * .075..strokeCap = StrokeCap.round..strokeJoin = StrokeJoin.round;
     canvas.drawLine(Offset(w * .52, h * .82), Offset(w * .52, h * .42), a);
     canvas.drawPath(Path()..moveTo(w * .4, h * .55)..lineTo(w * .52, h * .4)..lineTo(w * .64, h * .55), a);

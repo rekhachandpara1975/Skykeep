@@ -234,15 +234,31 @@ class Api {
   Future<void> blockChannel(String channelId) =>
       db.from('blocked_channels').upsert({'user_id': user!.id, 'channel_id': channelId});
 
-  /// Creator upload: file → `media/<channel>/...`, then post + item.
+  /// Creator upload: media → `media/<channel>/...`, optional thumbnail + trailer, then the post and its item.
+  /// Images are their own thumbnail unless one is given; for videos the caller passes the thumbnail
+  /// (picked by the creator or auto-cut from the video).
   Future<void> uploadPost({required String channelId, required String title, String? description,
-      required String fileName, required List<int> bytes, String? mime}) async {
-    final ext = fileName.contains('.') ? fileName.split('.').last : 'bin';
-    final key = '$channelId/${DateTime.now().microsecondsSinceEpoch}.$ext';
-    await db.storage.from('media').uploadBinary(key, Uint8ListX.from(bytes), fileOptions: FileOptions(contentType: mime));
+      required String fileName, required List<int> bytes, String? mime,
+      List<int>? thumbBytes, String? thumbMime, List<int>? trailerBytes, String? trailerName, String? trailerMime,
+      bool premium = false, int? durationS}) async {
+    String ext(String n) => n.contains('.') ? n.split('.').last : 'bin';
+    final stamp = DateTime.now().microsecondsSinceEpoch;
+    final key = '$channelId/$stamp.${ext(fileName)}';
+    final store = db.storage.from('media');
+    await store.uploadBinary(key, Uint8ListX.from(bytes), fileOptions: FileOptions(contentType: mime));
+    String? thumbKey = (mime ?? '').startsWith('image/') ? key : null;
+    if (thumbBytes != null) {
+      thumbKey = '$channelId/$stamp-thumb.${(thumbMime ?? 'image/jpeg').endsWith('png') ? 'png' : 'jpg'}';
+      await store.uploadBinary(thumbKey, Uint8ListX.from(thumbBytes), fileOptions: FileOptions(contentType: thumbMime ?? 'image/jpeg'));
+    }
+    String? trailerKey;
+    if (trailerBytes != null) {
+      trailerKey = '$channelId/$stamp-trailer.${ext(trailerName ?? 'trailer.mp4')}';
+      await store.uploadBinary(trailerKey, Uint8ListX.from(trailerBytes), fileOptions: FileOptions(contentType: trailerMime ?? 'video/mp4'));
+    }
     final post = await db.from('posts').insert({'channel_id': channelId, 'title': title, 'description': description, 'status': 'published'}).select('id').single();
-    await db.from('post_items').insert({'post_id': post['id'], 'media_key': key, 'thumbnail_key': (mime ?? '').startsWith('image/') ? key : null,
-      'mime': mime, 'size_bytes': bytes.length});
+    await db.from('post_items').insert({'post_id': post['id'], 'media_key': key, 'thumbnail_key': thumbKey, 'trailer_key': trailerKey,
+      'is_premium': premium, 'duration_s': durationS, 'mime': mime, 'size_bytes': bytes.length});
   }
 
   // ---------- cloud ----------

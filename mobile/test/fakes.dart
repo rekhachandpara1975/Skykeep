@@ -5,6 +5,7 @@ import 'package:skykeep/app_state.dart';
 import 'package:skykeep/main.dart';
 import 'package:skykeep/services/api.dart';
 import 'package:skykeep/services/play_integrity.dart';
+import 'package:skykeep/services/thumbs.dart';
 import 'package:skykeep/services/upi.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show User;
 
@@ -103,6 +104,17 @@ class FakeApi extends Api {
   @override
   Future<List<Json>> followingPosts({int page = 0}) async => guest || page > 0 ? const [] : posts;
 
+  // ---------- creator upload ----------
+  final uploads = <Map<String, Object?>>[];
+  @override
+  Future<void> uploadPost({required String channelId, required String title, String? description,
+      required String fileName, required List<int> bytes, String? mime,
+      List<int>? thumbBytes, String? thumbMime, List<int>? trailerBytes, String? trailerName, String? trailerMime,
+      bool premium = false, int? durationS}) async {
+    uploads.add({'channel': channelId, 'title': title, 'file': fileName, 'mime': mime, 'thumb': thumbBytes, 'thumbMime': thumbMime,
+      'trailer': trailerBytes, 'trailerName': trailerName, 'premium': premium, 'durationS': durationS});
+  }
+
   // ---------- UPI proof ----------
   final proofs = <List<String>>[];
   String? proofError;
@@ -140,22 +152,22 @@ class FakeUpi extends UpiLauncher {
   Future<List<int>?> qr(String uri, {int size = 600}) async => null;
 }
 
-Future<AppController> makeController(FakeApi api, {UpiLauncher? upi, PlayIntegrity? play}) async {
+Future<AppController> makeController(FakeApi api, {UpiLauncher? upi, PlayIntegrity? play, Thumbs? thumbs}) async {
   SharedPreferences.setMockInitialValues({});
   final prefs = await SharedPreferences.getInstance();
-  final c = AppController(api: api, prefs: prefs, upi: upi ?? FakeUpi(const UpiLaunch()), realtime: false, play: play ?? const FakePlay());
+  final c = AppController(api: api, prefs: prefs, upi: upi ?? FakeUpi(const UpiLaunch()), realtime: false, play: play ?? const FakePlay(), thumbs: thumbs ?? const Thumbs());
   await c.refresh();
   return c;
 }
 
 Future<AppController> pumpApp(WidgetTester t, FakeApi api, Widget home,
-    {UpiLauncher? upi, PlayIntegrity? play, double width = 400, double height = 860, double textScale = 1}) async {
+    {UpiLauncher? upi, PlayIntegrity? play, Thumbs? thumbs, double width = 400, double height = 860, double textScale = 1}) async {
   t.view.physicalSize = Size(width * 3, height * 3);
   t.view.devicePixelRatio = 3;
   addTearDown(t.view.reset);
   t.platformDispatcher.textScaleFactorTestValue = textScale;
   addTearDown(t.platformDispatcher.clearTextScaleFactorTestValue);
-  final c = await makeController(api, upi: upi, play: play);
+  final c = await makeController(api, upi: upi, play: play, thumbs: thumbs);
   await t.pumpWidget(SkyKeepApp(controller: c, home: home, googleFonts: false));
   await t.pumpAndSettle();
   return c;

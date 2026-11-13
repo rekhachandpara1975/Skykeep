@@ -11,6 +11,7 @@ import 'explore.dart';
 import 'home.dart' show HomeShellState;
 import 'login_sheet.dart';
 import 'profile.dart' show ProfileButton;
+import 'upload_post.dart';
 import 'premium.dart';
 
 class ChannelsScreen extends StatefulWidget {
@@ -259,20 +260,8 @@ class _ChannelPageState extends State<ChannelPage> {
     if (!await requireConsent(context)) return;
     if (!mounted) return;
     if (!AppScope.read(context).status.isPremium) { toast(context, 'Uploading content is for Premium members'); return; }
-    final file = await FilePicker.pickFile(type: FileType.media);
-    if (file == null || !mounted) return;
-    final title = await _ask(context, 'Post title', file.name.split('.').first);
-    if (title == null || !mounted) return;
-    setState(() => _busy = true);
-    try {
-      await AppScope.read(context).api.uploadPost(channelId: widget.channelId, title: title, fileName: file.name, bytes: await file.readAsBytes(),
-          mime: _mime(file.extension));
-      if (mounted) toast(context, 'Posted');
-      await _load();
-    } catch (e) {
-      if (mounted) toast(context, friendlyError(e));
-    }
-    if (mounted) setState(() => _busy = false);
+    final posted = await Navigator.push<bool>(context, MaterialPageRoute(builder: (_) => UploadPostScreen(channelId: widget.channelId)));
+    if (posted == true && mounted) await _load();
   }
 
   @override
@@ -289,7 +278,7 @@ class _ChannelPageState extends State<ChannelPage> {
         if (mine) IconButton(tooltip: 'Edit channel', icon: const Icon(Icons.edit), onPressed: () async { await openChannelForm(context, channel: ch); _load(); }),
       ]),
       floatingActionButton: mine && approved
-          ? FloatingActionButton.extended(onPressed: _busy ? null : _upload, icon: const Icon(Icons.upload), label: const Text('Upload'))
+          ? FloatingActionButton.extended(onPressed: _busy ? null : _upload, icon: const Icon(Icons.upload_rounded), label: const Text('Upload'), shape: const StadiumBorder(), extendedPadding: const EdgeInsets.symmetric(horizontal: 20))
           : null,
       body: _loading
           ? const SkeletonList(count: 4)
@@ -319,7 +308,7 @@ class _ChannelPageState extends State<ChannelPage> {
                           : GradientButton(label: 'Join channel', onPressed: _busy ? null : _toggle),
                     const SizedBox(height: 16),
                     if (_posts.isEmpty) const Text('No posts yet.', style: TextStyle(color: C.muted)),
-                    for (final p in _posts) Padding(padding: const EdgeInsets.only(bottom: 12), child: PostCard(post: {...p, 'channels': null})),
+                    for (final p in _posts) Padding(padding: const EdgeInsets.only(bottom: 12), child: PostCard(post: {...p, 'channels': null}, queue: [for (final x in _posts) x['id'] as String])),
                   ]),
                 ),
     );
@@ -341,6 +330,8 @@ Future<String?> _ask(BuildContext context, String title, String initial) {
       FilledButton(onPressed: () => Navigator.pop(d, c.text.trim().isEmpty ? null : c.text.trim()), child: const Text('OK'))]));
 }
 Future<String?> askText(BuildContext context, String title, String initial) => _ask(context, title, initial);
+
+const channelCategories = ['Entertainment', 'Music', 'Learning', 'Technology', 'Education', 'Lifestyle', 'Fitness'];
 
 class ChannelForm extends StatefulWidget {
   const ChannelForm({super.key, this.channel});
@@ -426,6 +417,12 @@ class _ChannelFormState extends State<ChannelForm> {
         TextField(controller: _desc, maxLines: 4, maxLength: 2000, decoration: const InputDecoration(labelText: 'Description (optional)')),
         const SizedBox(height: 8),
         TextField(controller: _cat, decoration: const InputDecoration(labelText: 'Category (optional)')),
+        const SizedBox(height: 6),
+        Wrap(spacing: 8, runSpacing: 0, children: [
+          for (final c in channelCategories)
+            ActionChip(label: Text(c), onPressed: () => setState(() => _cat.text = c)),
+        ]),
+        const Padding(padding: EdgeInsets.only(top: 4), child: Text('The category decides where your posts appear under Latest posts on Explore.', style: TextStyle(color: C.muted, fontSize: 12))),
         const SizedBox(height: 12),
         TextField(controller: _tags, decoration: const InputDecoration(labelText: 'Tags (optional, comma separated)')),
         const SizedBox(height: 8),

@@ -40,6 +40,7 @@ class MainActivity : FlutterActivity() {
             }
         }
         PlayChannel.register(this, flutterEngine)
+        ThumbChannel.register(flutterEngine)
         // first launch: ask for notifications (Android 13+ shows the system "Allow … to send you notifications?")
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "app/perm").setMethodCallHandler { call, result ->
             if (call.method != "notifications") return@setMethodCallHandler result.notImplemented()
