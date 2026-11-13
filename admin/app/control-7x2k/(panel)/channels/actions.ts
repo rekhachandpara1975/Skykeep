@@ -4,7 +4,9 @@ import { run, str } from '@/lib/action';
 
 export async function reviewChannel(f: FormData) {
   await requireAdmin(true);
-  const approve = str(f, 'decision') === 'approve';
+  const decision = str(f, 'decision');
+  if (decision !== 'approve' && decision !== 'reject') return run('/control-7x2k/channels', '', async () => ({ error: { message: 'No decision received — nothing was changed. Please try again.' } }));
+  const approve = decision === 'approve';
   await run('/control-7x2k/channels', approve ? 'Channel approved' : 'Channel rejected', async () => {
     const sb = await supabaseServer();
     return sb.rpc('admin_review_channel', { p_channel_id: str(f, 'id'), p_approve: approve, p_audience: str(f, 'audience') || 'all' });
