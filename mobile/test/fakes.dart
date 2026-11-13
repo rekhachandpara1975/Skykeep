@@ -87,6 +87,9 @@ class FakeApi extends Api {
   @override
   Future<List<Json>> latestPosts({int page = 0, String? category, String? query}) async => page == 0 ? posts : const [];
   @override
+  Future<List<Json>> suggestedPosts(String excludePostId, {String? excludeChannelId, int limit = 10}) async =>
+      [for (final p in posts) p].where((p) => p['id'] != excludePostId).toList();
+  @override
   Future<List<String>> categories() async => const ['Tech', 'Travel'];
   @override
   Future<List<Json>> channels(String tab) async => tab == 'discover' ? channelsList : const [];
