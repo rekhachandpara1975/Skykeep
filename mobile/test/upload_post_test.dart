@@ -30,7 +30,7 @@ PickedMedia _file(String name, {int size = 3, String? path}) => PickedMedia(name
 
 void main() {
   Future<void> post(WidgetTester t) async {
-    await t.ensureVisible(find.widgetWithText(GradientButton, 'Post'));
+    await t.scrollUntilVisible(find.widgetWithText(GradientButton, 'Post'), 300, scrollable: find.byType(Scrollable).first);
     await t.pumpAndSettle();
     await t.tap(find.widgetWithText(GradientButton, 'Post'));
     await t.pumpAndSettle();
@@ -69,15 +69,15 @@ void main() {
     }), thumbs: _FakeThumbs(VideoFrame(_png, Duration.zero)));
     await t.tap(find.text('Choose'));
     await t.pumpAndSettle();
-    await t.ensureVisible(find.text('Upload thumbnail (optional)'));
+    await t.scrollUntilVisible(find.text('Upload thumbnail (optional)'), 300, scrollable: find.byType(Scrollable).first);
     await t.tap(find.text('Upload thumbnail (optional)'));
     await t.pumpAndSettle();
     expect(find.text('Your thumbnail'), findsOneWidget);
-    await t.ensureVisible(find.text('Add trailer'));
+    await t.scrollUntilVisible(find.text('Add trailer'), 300, scrollable: find.byType(Scrollable).first);
     await t.tap(find.text('Add trailer'));
     await t.pumpAndSettle();
     expect(find.text('trailer.mp4'), findsOneWidget);
-    await t.ensureVisible(find.byType(SwitchListTile));
+    await t.scrollUntilVisible(find.byType(SwitchListTile), 300, scrollable: find.byType(Scrollable).first);
     await t.tap(find.byType(SwitchListTile));
     await t.pumpAndSettle();
     await post(t);
@@ -96,6 +96,8 @@ void main() {
     await pumpApp(t, api, UploadPostScreen(channelId: 'c1', picker: (type) async => PickedMedia(name: 'pic.jpg', bytes: _png)), thumbs: thumbs);
     await post(t);
     expect(api.uploads, isEmpty); // nothing chosen yet
+    await t.drag(find.byType(Scrollable).first, const Offset(0, 3000));
+    await t.pumpAndSettle();
     await t.tap(find.text('Choose'));
     await t.pumpAndSettle();
     expect(thumbs.asked, isNull);
